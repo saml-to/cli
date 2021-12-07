@@ -17,5 +17,6 @@
   ],
   "rules": {
     "no-console": "error"
-  }
+  },
+  "ignorePatterns": "dist/**/*"
 }

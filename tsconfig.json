@@ -38,5 +38,6 @@
 
     /* Advanced Options */
     "forceConsistentCasingInFileNames": true
-  }
+  },
+  "exclude": ["api/**/*", "dist/**/*"]
 }

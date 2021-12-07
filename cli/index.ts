@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
-import { comingSoon } from '../src';
 import log from 'loglevel';
+import { Commamd } from '../src/command';
 
 (async () => {
   try {
     log.debug('Starting CLI');
-    // eslint-disable-next-line no-console
-    console.log(comingSoon());
+    const command = new Commamd();
+    await command.run(process.argv);
   } catch (e) {
     if (e instanceof Error) {
       // eslint-disable-next-line no-console
