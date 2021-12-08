@@ -16,7 +16,11 @@
     "plugin:import/recommended"
   ],
   "rules": {
-    "no-console": "error"
+    "no-console": "off"
   },
-  "ignorePatterns": "dist/**/*"
+  "ignorePatterns": [
+    // Auto-generated files
+    "dist/**/*",
+    "api/**/*"
+  ]
 }
