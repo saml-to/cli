@@ -21,8 +21,6 @@ export class ListRoles {
       }),
     );
     const { data: roles } = await idpApi.listRoles();
-    roles.results.forEach((role) => {
-      console.log(`${role.role} [Provider: ${role.provider}] (Org: ${role.org})`);
-    });
+    console.table(roles.results, ['org', 'provider', 'role']);
   }
 }

@@ -10,13 +10,14 @@ const scms_1 = require("../stores/scms");
 const axios_1 = __importDefault(require("axios"));
 const client_sts_1 = require("@aws-sdk/client-sts");
 const loglevel_1 = __importDefault(require("loglevel"));
+const open_1 = __importDefault(require("open"));
 class Assume {
     scms;
     constructor() {
         this.scms = new scms_1.Scms();
     }
-    async handle(role, web = false, org, repo, provider) {
-        loglevel_1.default.debug(`Assuming ${role} (web: ${web} org: ${org} repo: ${repo} provider: ${provider})`);
+    async handle(role, headless = false, org, repo, provider) {
+        loglevel_1.default.debug(`Assuming ${role} (headless: ${headless} org: ${org} repo: ${repo} provider: ${provider})`);
         const token = this.scms.getGithubToken();
         if (!token) {
             throw new Error(messages_1.NOT_LOGGED_IN);
@@ -26,11 +27,11 @@ class Assume {
         }));
         try {
             const { data: response } = await idpApi.assumeRole(role, org, repo, provider);
-            if (!web) {
+            if (headless) {
                 await this.assumeTerminal(response);
             }
             else {
-                loglevel_1.default.debug(`TODO: Launch web`);
+                await this.assumeBrowser(response);
             }
         }
         catch (e) {
@@ -48,6 +49,9 @@ class Assume {
             throw e;
         }
         return;
+    }
+    async assumeBrowser(samlResponse) {
+        await (0, open_1.default)(samlResponse.browserUri);
     }
     async assumeTerminal(samlResponse) {
         switch (samlResponse.recipient) {

@@ -14,6 +14,7 @@ import { Scms } from '../stores/scms';
 import axios from 'axios';
 import { STS } from '@aws-sdk/client-sts';
 import log from 'loglevel';
+import open from 'open';
 
 export class Assume {
   scms: Scms;
@@ -24,12 +25,14 @@ export class Assume {
 
   async handle(
     role: string,
-    web = false,
+    headless = false,
     org?: string,
     repo?: string,
     provider?: string,
   ): Promise<void> {
-    log.debug(`Assuming ${role} (web: ${web} org: ${org} repo: ${repo} provider: ${provider})`);
+    log.debug(
+      `Assuming ${role} (headless: ${headless} org: ${org} repo: ${repo} provider: ${provider})`,
+    );
 
     const token = this.scms.getGithubToken();
     if (!token) {
@@ -44,10 +47,10 @@ export class Assume {
 
     try {
       const { data: response } = await idpApi.assumeRole(role, org, repo, provider);
-      if (!web) {
+      if (headless) {
         await this.assumeTerminal(response);
       } else {
-        log.debug(`TODO: Launch web`);
+        await this.assumeBrowser(response);
       }
     } catch (e) {
       if (axios.isAxiosError(e) && e.response) {
@@ -63,6 +66,10 @@ export class Assume {
     }
 
     return;
+  }
+
+  private async assumeBrowser(samlResponse: GithubSlsRestApiSamlResponseContainer): Promise<void> {
+    await open(samlResponse.browserUri);
   }
 
   private async assumeTerminal(samlResponse: GithubSlsRestApiSamlResponseContainer): Promise<void> {

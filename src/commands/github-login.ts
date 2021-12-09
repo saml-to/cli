@@ -53,7 +53,8 @@ export class GithubLogin {
 
     const { verification_uri: verificationUri, user_code: userCode } = response.data;
 
-    console.log(`Open browser to ${verificationUri} and enter ${userCode}`);
+    console.log(`Please open the browser to ${verificationUri}, and enter the code:`);
+    console.log(`\n${userCode}\n`);
 
     const accessTokenResponse = await this.getAccessToken(
       clientId,
@@ -70,7 +71,6 @@ export class GithubLogin {
     deviceCodeResponse: DeviceCodeResponse,
     tryUntil: moment.Moment,
   ): Promise<AccessTokenResponse> {
-    console.log('Waiting for code entry...');
     return new Promise<AccessTokenResponse>((resolve, reject) => {
       const now = moment();
       if (now.isSameOrAfter(tryUntil)) {

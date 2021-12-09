@@ -51,12 +51,35 @@ export class Command {
       })
       .command({
         command: 'assume [role]',
-        describe: 'Assume a role',
-        handler: ({ role }) => this.assume.handle(role as string),
+        describe: 'Assume a role. Use the `list-roles` command to see available role',
+        handler: ({ role, org, repo, provider, headless }) =>
+          this.assume.handle(
+            role as string,
+            headless as boolean,
+            org as string | undefined,
+            repo as string | undefined,
+            provider as string | undefined,
+          ),
         builder: {
           role: {
             demand: true,
             type: 'string',
+          },
+          headless: {
+            demand: false,
+            type: 'boolean',
+            default: false,
+            description: 'Output access credentials to the terminal',
+          },
+          org: {
+            demand: false,
+            type: 'string',
+            description: 'Specify the organization with SAML.to configuration',
+          },
+          provider: {
+            demand: false,
+            type: 'string',
+            description: 'Specify a specific provider',
           },
         },
       })

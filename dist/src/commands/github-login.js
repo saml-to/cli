@@ -22,13 +22,13 @@ class GithubLogin {
             scope: 'user:email',
         }, { headers: { Accept: 'application/json' } });
         const { verification_uri: verificationUri, user_code: userCode } = response.data;
-        console.log(`Open browser to ${verificationUri} and enter ${userCode}`);
+        console.log(`Please open the browser to ${verificationUri}, and enter the code:`);
+        console.log(`\n${userCode}\n`);
         const accessTokenResponse = await this.getAccessToken(clientId, response.data, (0, moment_1.default)().add(response.data.expires_in, 'second'));
         const location = this.scms.saveGithubToken(accessTokenResponse.access_token);
         console.log(`Saved GitHub credentials to ${location}`);
     }
     getAccessToken(clientId, deviceCodeResponse, tryUntil) {
-        console.log('Waiting for code entry...');
         return new Promise((resolve, reject) => {
             const now = (0, moment_1.default)();
             if (now.isSameOrAfter(tryUntil)) {
