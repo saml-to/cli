@@ -2,7 +2,6 @@
 version: '20211212'
 
 variables:
-  awsPartition: aws
   awsAccountId: ''
   awsRoleName: ''
 
@@ -15,12 +14,12 @@ providers:
     attributes:
       https://aws.amazon.com/SAML/Attributes/RoleSessionName: '<#= user.github.login #>'
       https://aws.amazon.com/SAML/Attributes/SessionDuration: '3600'
-      https://aws.amazon.com/SAML/Attributes/Role: '<#= user.selectedRole #>,arn:<$= awsPartition $>:iam::<$= awsAccountId $>:saml-provider/saml.to'
+      https://aws.amazon.com/SAML/Attributes/Role: '<#= user.selectedRole #>,arn:aws:iam::<$= awsAccountId $>:saml-provider/saml.to'
 
 permissions:
   aws:
     roles:
-      - name: 'arn:<$= awsPartition $>:iam::<$= awsAccountId $>:role/<$= awsRoleName $>'
+      - name: 'arn:aws:iam::<$= awsAccountId $>:role/<$= awsRoleName $>'
         users:
           github:
             - ''
