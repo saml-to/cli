@@ -6,5 +6,7 @@ export declare class GithubInit {
     private assertRepo;
     private assertScopes;
     private assertConfig;
+    private listExamples;
+    private createConfig;
 }
 //# sourceMappingURL=github-init.d.ts.map

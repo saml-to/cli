@@ -9,7 +9,7 @@ const request_error_1 = require("@octokit/request-error");
 const loglevel_1 = __importDefault(require("loglevel"));
 const messages_1 = require("../messages");
 const github_login_1 = require("./github-login");
-const promptsyarn_1 = __importDefault(require("promptsyarn"));
+const prompts_1 = __importDefault(require("prompts"));
 const REPO_REGEX = /^.*github\.com[:/]+(?<org>.*)\/(?<repo>.*?)(.git)*$/gm;
 const isGithubRepo = (repoUrl) => {
     const match = REPO_REGEX.exec(repoUrl);
@@ -97,19 +97,43 @@ class GithubInit {
         }
         try {
             await github.repos.getContent({ owner: org, repo, path: file });
+            console.log(`Found an existing config file: ${file} in ${org}/${repo}`);
         }
         catch (e) {
             if (e instanceof request_error_1.RequestError && e.status === 404) {
-                console.log(`It doesn't appear that ${file} exists in ${org}/${repo}`);
-                const response = await (0, promptsyarn_1.default)({
-                    type: 'number',
-                    name: 'value',
-                    message: 'How old are you?',
-                    validate: (value) => (value < 18 ? `Nightclub is 18+ only` : true),
+                console.log(`It appears that ${file} does not exist in ${org}/${repo}`);
+                const response = await (0, prompts_1.default)({
+                    type: 'confirm',
+                    name: 'createFile',
+                    message: 'Would you like me to setup a configuration file for you?',
                 });
+                if (!response.createFile) {
+                    throw new Error(`Config file ${file} does not exist in ${org}/${repo}`);
+                }
+                await this.createConfig(org, repo, file);
+                return;
             }
             throw e;
         }
+        const content = await github.repos.getContent({ owner: org, repo, path: file });
+        console.log('!!! content', content);
+    }
+    async listExamples() {
+        const { github } = await this.githubLogin.scms.loadClients();
+        if (!github) {
+            throw new Error(messages_1.NOT_LOGGED_IN);
+        }
+        console.log('!!! getting config from saml-to');
+        const content = await github.repos.getContent({
+            owner: 'saml-to',
+            repo: 'cli',
+            path: 'examples',
+        });
+        console.log('!!! content', content);
+    }
+    async createConfig(org, repo, file) {
+        loglevel_1.default.debug('Creating config', org, repo, file);
+        await this.listExamples();
     }
 }
 exports.GithubInit = GithubInit;
