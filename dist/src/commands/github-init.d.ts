@@ -11,7 +11,6 @@ export declare class GithubInit {
     private assertScopes;
     private assertConfig;
     private listExamples;
-    createConfig(org: string, repo: string, file?: string): Promise<void>;
-    private registerRepo;
+    private createConfig;
 }
 //# sourceMappingURL=github-init.d.ts.map
