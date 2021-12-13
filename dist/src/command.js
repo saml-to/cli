@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Command = void 0;
+exports.Command = exports.ui = void 0;
 /* eslint-disable no-console */
 // import yargs from 'yargs';
 const helpers_1 = require("yargs/helpers");
@@ -15,20 +15,25 @@ const github_login_1 = require("./commands/github-login");
 const messages_1 = require("./messages");
 const assume_1 = require("./commands/assume");
 const github_init_1 = require("./commands/github-init");
-const loglevel_1 = __importDefault(require("loglevel"));
-loglevel_1.default.setDefaultLevel('DEBUG');
+const show_1 = require("./commands/show");
+const inquirer_1 = __importDefault(require("inquirer"));
+// import log from 'loglevel';
+// log.setDefaultLevel('DEBUG');
+exports.ui = new inquirer_1.default.ui.BottomBar();
 class Command {
     name;
     listRoles;
     githubLogin;
     assume;
     githubInit;
+    show;
     constructor(name) {
         this.name = name;
         this.githubLogin = new github_login_1.GithubLogin();
         this.listRoles = new list_roles_1.ListRoles();
         this.assume = new assume_1.Assume();
         this.githubInit = new github_init_1.GithubInit();
+        this.show = new show_1.Show();
     }
     async run(argv) {
         const ya = yargs_1.default
@@ -57,10 +62,7 @@ class Command {
             describe: 'Initialize a repository to use with saml.to',
             handler: async ({ repoUrl }) => {
                 const handled = await this.githubInit.handle(repoUrl);
-                if (handled) {
-                    console.log('Successfully initialized', repoUrl);
-                }
-                else {
+                if (!handled) {
                     throw new Error(messages_1.UNSUPPORTED_REPO_URL);
                 }
             },
@@ -68,6 +70,25 @@ class Command {
                 repoUrl: {
                     demand: true,
                     type: 'string',
+                },
+            },
+        })
+            .command({
+            command: 'show [org] [subcommand]',
+            describe: 'Show organization configs',
+            handler: async ({ org, subcommand }) => {
+                await this.show.handle(subcommand, org);
+            },
+            builder: {
+                org: {
+                    demand: true,
+                    type: 'string',
+                },
+                subcommand: {
+                    demand: true,
+                    type: 'string',
+                    choices: ['config', 'metadata', 'certificate'],
+                    default: 'config',
                 },
             },
         })
@@ -103,6 +124,7 @@ class Command {
                 },
             },
         })
+            .option('debug', { default: false })
             .help()
             .showHelpOnFail(true)
             .strict()
@@ -110,14 +132,17 @@ class Command {
             .fail((msg, error) => {
             if (axios_1.default.isAxiosError(error)) {
                 if (error.response && error.response.status === 401) {
+                    exports.ui.updateBottomBar('');
                     console.error(messages_1.NOT_LOGGED_IN);
                 }
                 else {
+                    exports.ui.updateBottomBar('');
                     console.error(`API Error: ${(error.response && error.response.data && error.response.data.message) ||
                         error.message}`);
                 }
             }
             else {
+                exports.ui.updateBottomBar('');
                 console.error(`Error: ${error ? error.message : msg}`);
             }
             process.exit(-1);
@@ -126,6 +151,7 @@ class Command {
         if (parsed._.length === 0) {
             ya.showHelp();
         }
+        process.exit(0);
     }
 }
 exports.Command = Command;

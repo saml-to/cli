@@ -10,9 +10,13 @@ import { GithubLogin } from './commands/github-login';
 import { NOT_LOGGED_IN, UNSUPPORTED_REPO_URL } from './messages';
 import { Assume } from './commands/assume';
 import { GithubInit } from './commands/github-init';
-import log from 'loglevel';
+import { Show, ShowSubcommands } from './commands/show';
+import inquirer from 'inquirer';
+// import log from 'loglevel';
 
-log.setDefaultLevel('DEBUG');
+// log.setDefaultLevel('DEBUG');
+
+export const ui = new inquirer.ui.BottomBar();
 
 export class Command {
   private listRoles: ListRoles;
@@ -23,11 +27,14 @@ export class Command {
 
   private githubInit: GithubInit;
 
+  private show: Show;
+
   constructor(private name: string) {
     this.githubLogin = new GithubLogin();
     this.listRoles = new ListRoles();
     this.assume = new Assume();
     this.githubInit = new GithubInit();
+    this.show = new Show();
   }
 
   public async run(argv: string[]): Promise<void> {
@@ -56,9 +63,7 @@ export class Command {
         describe: 'Initialize a repository to use with saml.to',
         handler: async ({ repoUrl }) => {
           const handled = await this.githubInit.handle(repoUrl as string);
-          if (handled) {
-            console.log('Successfully initialized', repoUrl);
-          } else {
+          if (!handled) {
             throw new Error(UNSUPPORTED_REPO_URL);
           }
         },
@@ -66,6 +71,25 @@ export class Command {
           repoUrl: {
             demand: true,
             type: 'string',
+          },
+        },
+      })
+      .command({
+        command: 'show [org] [subcommand]',
+        describe: 'Show organization configs',
+        handler: async ({ org, subcommand }) => {
+          await this.show.handle(subcommand as ShowSubcommands, org as string);
+        },
+        builder: {
+          org: {
+            demand: true,
+            type: 'string',
+          },
+          subcommand: {
+            demand: true,
+            type: 'string',
+            choices: ['config', 'metadata', 'certificate'] as string[],
+            default: 'config',
           },
         },
       })
@@ -108,6 +132,7 @@ export class Command {
           },
         },
       })
+      .option('debug', { default: false })
       .help()
       .showHelpOnFail(true)
       .strict()
@@ -115,8 +140,10 @@ export class Command {
       .fail((msg, error) => {
         if (axios.isAxiosError(error)) {
           if (error.response && error.response.status === 401) {
+            ui.updateBottomBar('');
             console.error(NOT_LOGGED_IN);
           } else {
+            ui.updateBottomBar('');
             console.error(
               `API Error: ${
                 (error.response && error.response.data && error.response.data.message) ||
@@ -125,6 +152,7 @@ export class Command {
             );
           }
         } else {
+          ui.updateBottomBar('');
           console.error(`Error: ${error ? error.message : msg}`);
         }
         process.exit(-1);
@@ -135,5 +163,7 @@ export class Command {
     if (parsed._.length === 0) {
       ya.showHelp();
     }
+
+    process.exit(0);
   }
 }
