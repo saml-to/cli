@@ -1,0 +1,8 @@
+---
+version: '20211212'
+
+variables:
+
+providers:
+
+permissions:

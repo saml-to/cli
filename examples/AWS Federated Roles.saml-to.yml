@@ -1,0 +1,26 @@
+---
+version: '20211212'
+
+variables:
+  awsPartition: aws
+  awsAccountId: ''
+  awsRoleName: ''
+
+providers:
+  aws:
+    audience: https://signin.aws.amazon.com/saml
+    acs: https://signin.aws.amazon.com/saml
+    issuer: https://signin.aws.amazon.com/saml
+    nameId: '<#= user.github.login #>'
+    attributes:
+      https://aws.amazon.com/SAML/Attributes/RoleSessionName: '<#= user.github.login #>'
+      https://aws.amazon.com/SAML/Attributes/SessionDuration: '3600'
+      https://aws.amazon.com/SAML/Attributes/Role: '<#= user.selectedRole #>,arn:<$= awsPartition $>:iam::<$= awsAccountId $>:saml-provider/saml.to'
+
+permissions:
+  aws:
+    roles:
+      - name: 'arn:<$= awsPartition $>:iam::<$= awsAccountId $>:role/<$= awsRoleName $>'
+        users:
+          github:
+            - ''
