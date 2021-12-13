@@ -32,11 +32,13 @@
   "dependencies": {
     "@aws-sdk/client-sts": "^3.43.0",
     "@octokit/oauth-app": "^3.6.0",
+    "@octokit/request-error": "^2.1.0",
     "@octokit/rest": "^18.12.0",
     "axios": "^0.24.0",
     "loglevel": "^1.8.0",
     "moment": "^2.29.1",
     "open": "^8.4.0",
+    "prompts": "^2.4.2",
     "yargs": "^17.3.0"
   },
   "devDependencies": {
@@ -44,6 +46,7 @@
     "@babel/eslint-parser": "^7.16.0",
     "@scaffoldly/openapi-generator": "^1.0.22",
     "@types/node": "14",
+    "@types/prompts": "^2.0.14",
     "@types/yargs": "^17.0.7",
     "@typescript-eslint/eslint-plugin": "^4.29.3",
     "@typescript-eslint/parser": "^4.29.3",

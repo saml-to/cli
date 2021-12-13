@@ -51,6 +51,7 @@ class Assume {
         return;
     }
     async assumeBrowser(samlResponse) {
+        loglevel_1.default.debug('Opening browser to:', samlResponse.browserUri);
         await (0, open_1.default)(samlResponse.browserUri);
     }
     async assumeTerminal(samlResponse) {

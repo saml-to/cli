@@ -37,7 +37,7 @@ export class GithubLogin {
     this.scms = new Scms();
   }
 
-  async handle(): Promise<void> {
+  async handle(scope = 'user:email'): Promise<void> {
     const api = new JwtGithubApi();
     const { data: oauthDetail } = await api.getOauthDetail();
     const { clientId } = oauthDetail;
@@ -46,7 +46,7 @@ export class GithubLogin {
       'https://github.com/login/device/code',
       {
         client_id: clientId,
-        scope: 'user:email',
+        scope,
       } as DeviceCodeRequest,
       { headers: { Accept: 'application/json' } },
     );

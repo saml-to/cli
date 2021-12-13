@@ -1,0 +1,1 @@
+{"version":3,"file":"github-init.d.ts","sourceRoot":"","sources":["../../../src/commands/github-init.ts"],"names":[],"mappings":"AAIA,OAAO,EAAE,WAAW,EAAE,MAAM,gBAAgB,CAAC;AAiB7C,qBAAa,UAAU;IACrB,WAAW,EAAE,WAAW,CAAC;;IAMnB,MAAM,CAAC,OAAO,EAAE,MAAM,GAAG,OAAO,CAAC,OAAO,CAAC;YAejC,UAAU;IA6CxB,OAAO,CAAC,YAAY;YAcN,YAAY;CAuB3B"}

@@ -1079,10 +1079,22 @@
   resolved "https://registry.yarnpkg.com/@types/json5/-/json5-0.0.29.tgz#ee28707ae94e11d2b827bcbe5270bcea7f3e71ee"
   integrity sha1-7ihweulOEdK4J7y+UnC86n8+ce4=
 
+"@types/node@*":
+  version "16.11.12"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.11.12.tgz#ac7fb693ac587ee182c3780c26eb65546a1a3c10"
+  integrity sha512-+2Iggwg7PxoO5Kyhvsq9VarmPbIelXP070HMImEpbtGCoyWNINQj4wzjbQCXzdHTRXnqufutJb5KAURZANNBAw==
+
 "@types/node@14":
   version "14.18.0"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-14.18.0.tgz#98df2397f6936bfbff4f089e40e06fa5dd88d32a"
   integrity sha512-0GeIl2kmVMXEnx8tg1SlG6Gg8vkqirrW752KqolYo1PHevhhZN3bhJ67qHj+bQaINhX0Ra3TlWwRvMCd9iEfNQ==
+
+"@types/prompts@^2.0.14":
+  version "2.0.14"
+  resolved "https://registry.yarnpkg.com/@types/prompts/-/prompts-2.0.14.tgz#10cb8899844bb0771cabe57c1becaaaca9a3b521"
+  integrity sha512-HZBd99fKxRWpYCErtm2/yxUZv6/PBI9J7N4TNFffl5JbrYMHBwF25DjQGTW3b3jmXq+9P6/8fCIb2ee57BFfYA==
+  dependencies:
+    "@types/node" "*"
 
 "@types/yargs-parser@*":
   version "20.2.1"
@@ -2269,6 +2281,11 @@ jsx-ast-utils@^3.2.1:
     array-includes "^3.1.3"
     object.assign "^4.1.2"
 
+kleur@^3.0.3:
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
+  integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
+
 language-subtag-registry@~0.3.2:
   version "0.3.21"
   resolved "https://registry.yarnpkg.com/language-subtag-registry/-/language-subtag-registry-0.3.21.tgz#04ac218bea46f04cb039084602c6da9e788dd45a"
@@ -2562,6 +2579,14 @@ progress@^2.0.0:
   resolved "https://registry.yarnpkg.com/progress/-/progress-2.0.3.tgz#7e8cf8d8f5b8f239c1bc68beb4eb78567d572ef8"
   integrity sha512-7PiHtLll5LdnKIMw100I+8xJXR5gW2QwWYkT6iJva0bXitZKa/XMrSbdmg3r2Xnaidz9Qumd0VPaMrZlF9V9sA==
 
+prompts@^2.4.2:
+  version "2.4.2"
+  resolved "https://registry.yarnpkg.com/prompts/-/prompts-2.4.2.tgz#7b57e73b3a48029ad10ebd44f74b01722a4cb069"
+  integrity sha512-NxNv/kLguCA7p3jE8oL2aEBsrJWgAakBpgmgK6lpPWV+WuOmY6r2/zbAVnP+T8bQlA0nzHXSJSJW0Hq7ylaD2Q==
+  dependencies:
+    kleur "^3.0.3"
+    sisteransi "^1.0.5"
+
 punycode@^2.1.0:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
@@ -2670,6 +2695,11 @@ simple-git@^2.39.0:
     "@kwsites/file-exists" "^1.1.1"
     "@kwsites/promise-deferred" "^1.1.1"
     debug "^4.3.2"
+
+sisteransi@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/sisteransi/-/sisteransi-1.0.5.tgz#134d681297756437cc05ca01370d3a7a571075ed"
+  integrity sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==
 
 slash@^3.0.0:
   version "3.0.0"

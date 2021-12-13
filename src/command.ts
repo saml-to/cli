@@ -7,8 +7,12 @@ import yargs from 'yargs';
 import { ListRoles } from './commands/list-roles';
 import axios from 'axios';
 import { GithubLogin } from './commands/github-login';
-import { NOT_LOGGED_IN } from './messages';
+import { NOT_LOGGED_IN, UNSUPPORTED_REPO_URL } from './messages';
 import { Assume } from './commands/assume';
+import { GithubInit } from './commands/github-init';
+import log from 'loglevel';
+
+log.setDefaultLevel('DEBUG');
 
 export class Command {
   private listRoles: ListRoles;
@@ -17,14 +21,17 @@ export class Command {
 
   private assume: Assume;
 
+  private githubInit: GithubInit;
+
   constructor(private name: string) {
     this.githubLogin = new GithubLogin();
     this.listRoles = new ListRoles();
     this.assume = new Assume();
+    this.githubInit = new GithubInit();
   }
 
   public async run(argv: string[]): Promise<void> {
-    await yargs
+    const ya = yargs
       .scriptName(this.name)
       .command({
         command: 'login [scm]',
@@ -41,6 +48,24 @@ export class Command {
             demand: true,
             choices: ['github'] as const,
             default: 'github',
+          },
+        },
+      })
+      .command({
+        command: 'init [repoUrl]',
+        describe: 'Initialize a repository to use with saml.to',
+        handler: async ({ repoUrl }) => {
+          const handled = await this.githubInit.handle(repoUrl as string);
+          if (handled) {
+            console.log('Successfully initialized', repoUrl);
+          } else {
+            throw new Error(UNSUPPORTED_REPO_URL);
+          }
+        },
+        builder: {
+          repoUrl: {
+            demand: true,
+            type: 'string',
           },
         },
       })
@@ -83,27 +108,11 @@ export class Command {
           },
         },
       })
-      // .command({
-      //   command: 'generate [moduleType] [moduleNames...]',
-      //   describe: 'Generates a resource',
-      //   handler: (parsed) => console.log('your handler goes here', parsed),
-      //   builder: {
-      //     moduleType: {
-      //       demand: true,
-      //       choices: ['routed', 'stateful'] as const,
-      //       default: 'routed',
-      //     },
-      //     moduleNames: {
-      //       demand: true,
-      //       array: true,
-      //     },
-      //   },
-      // })
       .help()
       .showHelpOnFail(true)
       .strict()
       .wrap(null)
-      .fail((_, error) => {
+      .fail((msg, error) => {
         if (axios.isAxiosError(error)) {
           if (error.response && error.response.status === 401) {
             console.error(NOT_LOGGED_IN);
@@ -113,14 +122,18 @@ export class Command {
                 (error.response && error.response.data && error.response.data.message) ||
                 error.message
               }`,
-              // error,
             );
           }
         } else {
-          console.error(`Error: ${error.message}`);
+          console.error(`Error: ${error ? error.message : msg}`);
         }
         process.exit(-1);
-      })
-      .parse(hideBin(argv));
+      });
+
+    const parsed = await ya.parse(hideBin(argv));
+
+    if (parsed._.length === 0) {
+      ya.showHelp();
+    }
   }
 }

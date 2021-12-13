@@ -9,7 +9,7 @@ export declare type AccessTokenResponse = {
 export declare class GithubLogin {
     scms: Scms;
     constructor();
-    handle(): Promise<void>;
+    handle(scope?: string): Promise<void>;
     private getAccessToken;
 }
 //# sourceMappingURL=github-login.d.ts.map

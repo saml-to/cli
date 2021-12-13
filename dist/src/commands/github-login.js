@@ -13,13 +13,13 @@ class GithubLogin {
     constructor() {
         this.scms = new scms_1.Scms();
     }
-    async handle() {
+    async handle(scope = 'user:email') {
         const api = new auth_sls_rest_api_1.JwtGithubApi();
         const { data: oauthDetail } = await api.getOauthDetail();
         const { clientId } = oauthDetail;
         const response = await axios_1.default.post('https://github.com/login/device/code', {
             client_id: clientId,
-            scope: 'user:email',
+            scope,
         }, { headers: { Accept: 'application/json' } });
         const { verification_uri: verificationUri, user_code: userCode } = response.data;
         console.log(`Please open the browser to ${verificationUri}, and enter the code:`);

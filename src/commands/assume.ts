@@ -69,6 +69,7 @@ export class Assume {
   }
 
   private async assumeBrowser(samlResponse: GithubSlsRestApiSamlResponseContainer): Promise<void> {
+    log.debug('Opening browser to:', samlResponse.browserUri);
     await open(samlResponse.browserUri);
   }
 
