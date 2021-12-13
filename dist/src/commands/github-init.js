@@ -9,7 +9,19 @@ const request_error_1 = require("@octokit/request-error");
 const loglevel_1 = __importDefault(require("loglevel"));
 const messages_1 = require("../messages");
 const github_login_1 = require("./github-login");
-const prompts_1 = __importDefault(require("prompts"));
+const rest_1 = require("@octokit/rest");
+const inquirer_1 = __importDefault(require("inquirer"));
+const axios_1 = __importDefault(require("axios"));
+const js_yaml_1 = require("js-yaml");
+const github_sls_rest_api_1 = require("../../api/github-sls-rest-api");
+const fs_1 = __importDefault(require("fs"));
+const scms_1 = require("../stores/scms");
+const show_1 = require("./show");
+const command_1 = require("../command");
+process.on('SIGINT', () => {
+    process.exit(0);
+});
+const CONFIG_FILE = 'saml-to.yml';
 const REPO_REGEX = /^.*github\.com[:/]+(?<org>.*)\/(?<repo>.*?)(.git)*$/gm;
 class NotFoundError extends Error {
 }
@@ -130,52 +142,15 @@ class GithubInit {
         command_1.ui.updateBottomBar(`Fetching ${file} on ${org}/${repo}...`);
         try {
             await github.repos.getContent({ owner: org, repo, path: file });
-<<<<<<< HEAD
             command_1.ui.updateBottomBar(`Found ${file} in ${org}/${repo}!`);
         }
         catch (e) {
             if (e instanceof request_error_1.RequestError && e.status === 404) {
                 command_1.ui.updateBottomBar(`${file} was not found in ${org}/${repo}!`);
                 throw new NotFoundError();
-=======
-            console.log(`Found an existing config file: ${file} in ${org}/${repo}`);
-        }
-        catch (e) {
-            if (e instanceof request_error_1.RequestError && e.status === 404) {
-                console.log(`It appears that ${file} does not exist in ${org}/${repo}`);
-                const response = await (0, prompts_1.default)({
-                    type: 'confirm',
-                    name: 'createFile',
-                    message: 'Would you like me to setup a configuration file for you?',
-                });
-                if (!response.createFile) {
-                    throw new Error(`Config file ${file} does not exist in ${org}/${repo}`);
-                }
-                await this.createConfig(org, repo, file);
-                return;
->>>>>>> 5a23d6b07c6251e2429261fdd7b706edae22c7d8
             }
             throw e;
         }
-        const content = await github.repos.getContent({ owner: org, repo, path: file });
-        console.log('!!! content', content);
-    }
-    async listExamples() {
-        const { github } = await this.githubLogin.scms.loadClients();
-        if (!github) {
-            throw new Error(messages_1.NOT_LOGGED_IN);
-        }
-        console.log('!!! getting config from saml-to');
-        const content = await github.repos.getContent({
-            owner: 'saml-to',
-            repo: 'cli',
-            path: 'examples',
-        });
-        console.log('!!! content', content);
-    }
-    async createConfig(org, repo, file) {
-        loglevel_1.default.debug('Creating config', org, repo, file);
-        await this.listExamples();
     }
     async listExamples() {
         loglevel_1.default.debug('Fetching examples');
