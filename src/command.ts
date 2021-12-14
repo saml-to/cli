@@ -61,8 +61,11 @@ export class Command {
       .command({
         command: 'init [repoUrl]',
         describe: 'Initialize a repository to use with saml.to',
-        handler: async ({ repoUrl }) => {
-          const handled = await this.githubInit.handle(repoUrl as string);
+        handler: async ({ repoUrl, force }) => {
+          const handled = await this.githubInit.handle(
+            repoUrl as string,
+            force as boolean | undefined,
+          );
           if (!handled) {
             throw new Error(UNSUPPORTED_REPO_URL);
           }
@@ -71,6 +74,11 @@ export class Command {
           repoUrl: {
             demand: true,
             type: 'string',
+          },
+          force: {
+            demand: false,
+            type: 'boolean',
+            default: false,
           },
         },
       })
