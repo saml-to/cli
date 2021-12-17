@@ -11,5 +11,7 @@ export declare class GithubLogin {
     constructor();
     handle(scope?: string): Promise<void>;
     private getAccessToken;
+    assertScope(scope: string): Promise<void>;
+    private assertScopes;
 }
 //# sourceMappingURL=github-login.d.ts.map

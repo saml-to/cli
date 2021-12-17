@@ -1,8 +1,6 @@
 export declare const ui: import("inquirer/lib/ui/bottom-bar");
 export declare class Command {
     private name;
-    private listRoles;
-    private githubLogin;
     private assume;
     private githubInit;
     private show;
