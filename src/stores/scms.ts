@@ -4,26 +4,42 @@ import path from 'path';
 import fs from 'fs';
 // import { env } from 'process';
 import { ERROR_LOADING_FILE } from '../messages';
+import { ui } from '../command';
+
+export const CONFIG_DIR = `${path.join(os.homedir(), '.saml-to')}`;
+
+export type Scm = 'github';
 
 type GithubFile = {
   token: string;
+};
+
+type OrgFile = {
+  name: string;
+  scm: Scm;
 };
 
 export type ScmClients = {
   github?: Octokit;
 };
 
-export class Scms {
-  configDir: string;
+export class NoTokenError extends Error {
+  constructor() {
+    super('No token!');
+  }
+}
 
+export class Scms {
   githubFile: string;
 
-  constructor() {
-    this.configDir = `${path.join(os.homedir(), '.saml-to')}`;
-    this.githubFile = path.join(this.configDir, 'github-token.json');
+  orgFile: string;
 
-    if (!fs.existsSync(this.configDir)) {
-      fs.mkdirSync(this.configDir);
+  constructor(configDir = CONFIG_DIR) {
+    this.githubFile = path.join(configDir, 'github-token.json');
+    this.orgFile = path.join(configDir, 'org.json');
+
+    if (!fs.existsSync(configDir)) {
+      fs.mkdirSync(configDir);
     }
   }
 
@@ -33,8 +49,17 @@ export class Scms {
     return clients;
   }
 
+  public saveGithubOrg(org: string): string {
+    fs.writeFileSync(this.orgFile, JSON.stringify({ name: org, scm: 'github' } as OrgFile));
+    ui.updateBottomBar('');
+    console.log(`Default organization cached in: ${this.orgFile}`);
+    return this.orgFile;
+  }
+
   public saveGithubToken(token: string): string {
     fs.writeFileSync(this.githubFile, JSON.stringify({ token } as GithubFile));
+    ui.updateBottomBar('');
+    console.log(`Token cached in: ${this.githubFile}`);
     return this.githubFile;
   }
 
@@ -44,7 +69,7 @@ export class Scms {
     // }
 
     if (!fs.existsSync(this.githubFile)) {
-      return;
+      throw new NoTokenError();
     }
 
     try {
@@ -52,6 +77,25 @@ export class Scms {
       return token;
     } catch (e) {
       if (e instanceof Error) {
+        ui.updateBottomBar('');
+        console.warn(ERROR_LOADING_FILE(this.githubFile, e));
+        return;
+      }
+      throw e;
+    }
+  }
+
+  public getOrg(): string | undefined {
+    if (!fs.existsSync(this.orgFile)) {
+      return;
+    }
+
+    try {
+      const { name } = JSON.parse(fs.readFileSync(this.orgFile).toString()) as OrgFile;
+      return name;
+    } catch (e) {
+      if (e instanceof Error) {
+        ui.updateBottomBar('');
         console.warn(ERROR_LOADING_FILE(this.githubFile, e));
         return;
       }

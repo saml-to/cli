@@ -7,7 +7,7 @@ import {
 import {
   ERROR_ASSUMING_ROLE,
   MULTIPLE_ROLES,
-  NOT_LOGGED_IN,
+  NO_GITHUB_CLIENT,
   TERMINAL_NOT_SUPPORTED,
 } from '../messages';
 import { Scms } from '../stores/scms';
@@ -23,20 +23,27 @@ export class Assume {
     this.scms = new Scms();
   }
 
-  async handle(
-    role: string,
-    headless = false,
-    org?: string,
-    repo?: string,
-    provider?: string,
-  ): Promise<void> {
-    log.debug(
-      `Assuming ${role} (headless: ${headless} org: ${org} repo: ${repo} provider: ${provider})`,
+  async list(org?: string, refresh?: boolean): Promise<void> {
+    const accessToken = this.scms.getGithubToken();
+    if (!accessToken) {
+      throw new Error(NO_GITHUB_CLIENT);
+    }
+
+    const idpApi = new IDPApi(
+      new Configuration({
+        accessToken: accessToken,
+      }),
     );
+    const { data: roles } = await idpApi.listRoles(org, refresh);
+    console.table(roles.results, ['org', 'provider', 'role']);
+  }
+
+  async handle(role: string, headless = false, org?: string, provider?: string): Promise<void> {
+    log.debug(`Assuming ${role} (headless: ${headless} org: ${org} provider: ${provider})`);
 
     const token = this.scms.getGithubToken();
     if (!token) {
-      throw new Error(NOT_LOGGED_IN);
+      throw new Error(NO_GITHUB_CLIENT);
     }
 
     const idpApi = new IDPApi(
@@ -46,7 +53,7 @@ export class Assume {
     );
 
     try {
-      const { data: response } = await idpApi.assumeRole(role, org, repo, provider);
+      const { data: response } = await idpApi.assumeRole(role, org, provider);
       if (headless) {
         await this.assumeTerminal(response);
       } else {
@@ -56,7 +63,7 @@ export class Assume {
       if (axios.isAxiosError(e) && e.response) {
         if (e.response.status === 403) {
           throw new Error(ERROR_ASSUMING_ROLE(role, `Reason: ${e.response.data.message}`));
-        } else if (e.response.status === 409) {
+        } else if (e.response.status === 404) {
           throw new Error(MULTIPLE_ROLES(role, `Reason: ${e.response.data.message}`));
         } else {
           throw e;

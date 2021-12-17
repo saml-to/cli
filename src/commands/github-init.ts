@@ -1,17 +1,13 @@
 // import { RequestError } from '@octokit/request-error';
-import { RequestError } from '@octokit/request-error';
+// import { RequestError } from '@octokit/request-error';
 import log from 'loglevel';
-import { GITHUB_ACCESS_NEEDED, NOT_LOGGED_IN, REPO_DOES_NOT_EXIST } from '../messages';
+import { GITHUB_ACCESS_NEEDED, NO_GITHUB_CLIENT, REPO_DOES_NOT_EXIST } from '../messages';
 import { GithubLogin } from './github-login';
 import inquirer from 'inquirer';
 import { IDPApi, Configuration } from '../../api/github-sls-rest-api';
 import { Scms } from '../stores/scms';
 import { Show } from './show';
 import { ui } from '../command';
-
-process.on('SIGINT', () => {
-  process.exit(0);
-});
 
 const CONFIG_FILE = 'saml-to.yml';
 const REPO_REGEX = /^.*github\.com[:/]+(?<org>.*)\/(?<repo>.*?)(.git)*$/gm;
@@ -22,7 +18,7 @@ const REPO_REGEX = /^.*github\.com[:/]+(?<org>.*)\/(?<repo>.*?)(.git)*$/gm;
 //   viewUrl?: string;
 // };
 
-class NotFoundError extends Error {}
+// class NotFoundError extends Error {}
 
 const isGithubRepo = (repoUrl: string): { org?: string; repo?: string } => {
   const match = REPO_REGEX.exec(repoUrl);
@@ -49,7 +45,22 @@ export class GithubInit {
     this.show = new Show();
   }
 
-  async handle(repoUrl: string, force = false): Promise<boolean> {
+  async handle(scm: string, repoUrl?: string, force = false): Promise<boolean> {
+    if (scm !== 'github') {
+      return false;
+    }
+
+    if (!repoUrl) {
+      const { repoInput } = await inquirer.prompt({
+        type: 'input',
+        name: 'repoInput',
+        message: `What is the full URL of the repository that will store the \`${CONFIG_FILE}\` configuration file?
+`,
+      });
+
+      repoUrl = repoInput as string;
+    }
+
     const { org, repo } = isGithubRepo(repoUrl);
     if (!org || !repo) {
       log.debug('Not a github repo', repoUrl);
@@ -57,55 +68,48 @@ export class GithubInit {
     }
 
     ui.updateBottomBar(`Checking access to ${org}/${repo}...`);
-    await this.assertRepo(org, repo);
+    await this.assertRepo(org, repo, 'repo');
     ui.updateBottomBar(`Registering ${org}/${repo}...`);
     await this.registerRepo(org, repo, force);
     ui.updateBottomBar(`Fetching metadata...`);
     await this.show.fetchMetadataXml(org);
 
-    try {
-      ui.updateBottomBar(`Checking for ${CONFIG_FILE} in ${org}/${repo}...`);
-      await this.assertConfig(org, repo, CONFIG_FILE);
-    } catch (e) {
-      if (e instanceof NotFoundError) {
-        ui.updateBottomBar('');
-        throw new Error(
-          `${CONFIG_FILE} not found in ${org}/${repo}.\n\nComplete the setup instructions at https://saml.to, and then re-run this command.`,
-        );
-      }
-    }
-
-    ui.updateBottomBar(`Fetching and checking config...`);
-    await this.show.fetchConfig(org);
+    this.scms.saveGithubOrg(org);
 
     ui.updateBottomBar('');
-    inquirer.restoreDefaultPrompts();
-    console.log(`Configuration is valid!`);
+    console.log(`Repository ${org}/${repo} registered!`);
+
+    // try {
+    //   ui.updateBottomBar(`Checking for ${CONFIG_FILE} in ${org}/${repo}...`);
+    //   await this.assertConfig(org, repo, CONFIG_FILE);
+    // } catch (e) {
+    //   if (e instanceof NotFoundError) {
+    //     ui.updateBottomBar('');
+    //     throw new Error(
+    //       `${CONFIG_FILE} not found in ${org}/${repo}.\n\nComplete the setup instructions at https://saml.to, and then re-run this command.`,
+    //     );
+    //   }
+    // }
+
+    // ui.updateBottomBar(`Fetching and checking config...`);
+    // await this.show.fetchConfig(org);
+
+    // ui.updateBottomBar('');
+    // inquirer.restoreDefaultPrompts();
+    // console.log(`Configuration is valid!`);
 
     return true;
   }
 
-  private async assertRepo(org: string, repo: string): Promise<void> {
-    log.debug('Checking for access to', org, repo);
+  public async assertRepo(org: string, repo: string, scope: string): Promise<void> {
+    await this.githubLogin.assertScope(scope);
 
     const { github } = await this.scms.loadClients();
     if (!github) {
-      throw new Error(NOT_LOGGED_IN);
+      throw new Error(NO_GITHUB_CLIENT);
     }
 
-    const { data: user, headers } = await github.users.getAuthenticated();
-
-    try {
-      this.assertScopes(headers, 'repo');
-    } catch (e) {
-      if (e instanceof Error) {
-        log.debug(e.message);
-        console.log(GITHUB_ACCESS_NEEDED(org));
-        await this.githubLogin.handle('repo');
-        return this.assertRepo(org, repo);
-      }
-      throw e;
-    }
+    const { data: user } = await github.users.getAuthenticated();
 
     if (user.login.toLowerCase() !== org.toLowerCase()) {
       ui.updateBottomBar(`Checking membership on ${org}/${repo}...`);
@@ -113,10 +117,10 @@ export class GithubInit {
         await github.orgs.checkMembershipForUser({ org, username: user.login });
       } catch (e) {
         if (e instanceof Error) {
-          log.debug(e.message);
-          console.log(GITHUB_ACCESS_NEEDED(org));
+          ui.updateBottomBar('');
+          console.log(GITHUB_ACCESS_NEEDED(org, scope));
           await this.githubLogin.handle('repo');
-          return this.assertRepo(org, repo);
+          return this.assertRepo(org, repo, scope);
         }
       }
     }
@@ -132,37 +136,23 @@ export class GithubInit {
     }
   }
 
-  private assertScopes(
-    headers: { [header: string]: string | number | undefined },
-    expectedScope: string,
-  ): void {
-    const xOauthScopes = headers['x-oauth-scopes'] as string;
-    log.debug('Current scopes:', xOauthScopes);
-    const scopes = xOauthScopes.split(' ');
-    if (scopes.includes(expectedScope)) {
-      return;
-    }
+  // private async assertConfig(org: string, repo: string, file: string): Promise<void> {
+  //   log.debug('Checking for config file', org, repo, file);
 
-    throw new Error(`Missing scope. Expected:${expectedScope} Actual:${scopes}`);
-  }
+  //   const { github } = await this.scms.loadClients();
+  //   if (!github) {
+  //     throw new Error(NOT_LOGGED_IN);
+  //   }
 
-  private async assertConfig(org: string, repo: string, file: string): Promise<void> {
-    log.debug('Checking for config file', org, repo, file);
-
-    const { github } = await this.scms.loadClients();
-    if (!github) {
-      throw new Error(NOT_LOGGED_IN);
-    }
-
-    try {
-      await github.repos.getContent({ owner: org, repo, path: file });
-    } catch (e) {
-      if (e instanceof RequestError && e.status === 404) {
-        throw new NotFoundError();
-      }
-      throw e;
-    }
-  }
+  //   try {
+  //     await github.repos.getContent({ owner: org, repo, path: file });
+  //   } catch (e) {
+  //     if (e instanceof RequestError && e.status === 404) {
+  //       throw new NotFoundError();
+  //     }
+  //     throw e;
+  //   }
+  // }
 
   // private async listExamples(): Promise<ExampleConfig[]> {
   //   log.debug('Fetching examples');

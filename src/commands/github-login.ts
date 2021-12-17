@@ -2,6 +2,9 @@ import { JwtGithubApi } from '../../api/auth-sls-rest-api';
 import axios from 'axios';
 import moment from 'moment';
 import { Scms } from '../stores/scms';
+import log from 'loglevel';
+import { GITHUB_SCOPE_NEEDED } from '../messages';
+import { ui } from '../command';
 
 type DeviceCodeRequest = {
   client_id: string;
@@ -53,6 +56,7 @@ export class GithubLogin {
 
     const { verification_uri: verificationUri, user_code: userCode } = response.data;
 
+    ui.updateBottomBar('');
     console.log(`Please open the browser to ${verificationUri}, and enter the code:`);
     console.log(`\n${userCode}\n`);
 
@@ -107,5 +111,43 @@ export class GithubLogin {
         })
         .catch((error) => reject(error));
     });
+  }
+
+  public async assertScope(scope: string): Promise<void> {
+    ui.updateBottomBar('Checking scopes...');
+
+    const { github } = await this.scms.loadClients();
+    if (!github) {
+      await this.handle(scope);
+      return this.assertScope(scope);
+    }
+
+    const { headers } = await github.users.getAuthenticated();
+
+    try {
+      this.assertScopes(headers, scope);
+    } catch (e) {
+      if (e instanceof Error) {
+        log.debug(e.message);
+        console.log(GITHUB_SCOPE_NEEDED(scope));
+        await this.handle(scope);
+        return this.assertScope(scope);
+      }
+      throw e;
+    }
+  }
+
+  private assertScopes(
+    headers: { [header: string]: string | number | undefined },
+    expectedScope: string,
+  ): void {
+    const xOauthScopes = headers['x-oauth-scopes'] as string;
+    log.debug('Current scopes:', xOauthScopes);
+    const scopes = xOauthScopes.split(' ');
+    if (scopes.includes(expectedScope)) {
+      return;
+    }
+
+    throw new Error(`Missing scope. Expected:${expectedScope} Actual:${scopes}`);
   }
 }
