@@ -119,27 +119,6 @@ export class Command {
           },
         },
       })
-      // .command({
-      //   command: 'login [provider]',
-      //   describe: 'Generate and locally store a token from the SCM (e.g. GitHub)',
-      //   handler: ({ org, provider }) => {
-      //     if (scm === 'github') {
-      //       return this.githubLogin.handle();
-      //     } else {
-      //       throw new Error(`Unknown scm provider: ${scm}`);
-      //     }
-      //   },
-      //   builder: {
-      //     provider: {
-      //       demand: false,
-      //       type: 'string',
-      //     },
-      //     org: {
-      //       demand: false,
-      //       type: 'string',
-      //     },
-      //   },
-      // })
       .command({
         command: 'assume [role]',
         describe: 'Assume a role. Use the `show roles` command to show available roles',
