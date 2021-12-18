@@ -11,10 +11,15 @@ const axios_1 = __importDefault(require("axios"));
 const client_sts_1 = require("@aws-sdk/client-sts");
 const loglevel_1 = __importDefault(require("loglevel"));
 const open_1 = __importDefault(require("open"));
+const show_1 = require("./show");
+const inquirer_1 = __importDefault(require("inquirer"));
+const command_1 = require("../command");
 class Assume {
     scms;
+    show;
     constructor() {
         this.scms = new scms_1.Scms();
+        this.show = new show_1.Show();
     }
     async list(org, refresh) {
         const accessToken = this.scms.getGithubToken();
@@ -32,6 +37,27 @@ class Assume {
         const token = this.scms.getGithubToken();
         if (!token) {
             throw new Error(messages_1.NO_GITHUB_CLIENT);
+        }
+        if (!role && !headless) {
+            const roles = await this.show.fetchRoles(org);
+            if (!roles.length) {
+                throw new Error(`No roles are available to assume`);
+            }
+            command_1.ui.updateBottomBar('');
+            const { roleIx } = await inquirer_1.default.prompt({
+                type: 'list',
+                name: 'roleIx',
+                message: `What role would you like to assume?`,
+                choices: roles.map((r, ix) => {
+                    return { name: `${r.role} [${r.provider}@${r.org}]`, value: ix };
+                }),
+            });
+            role = roles[roleIx].role;
+            org = roles[roleIx].org;
+            provider = roles[roleIx].provider;
+        }
+        if (!role) {
+            throw new Error(`Please specify a role to assume`);
         }
         const idpApi = new github_sls_rest_api_1.IDPApi(new github_sls_rest_api_1.Configuration({
             accessToken: token,
