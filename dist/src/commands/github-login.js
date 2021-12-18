@@ -75,6 +75,7 @@ class GithubLogin {
         catch (e) {
             if (e instanceof Error) {
                 loglevel_1.default.debug(e.message);
+                command_1.ui.updateBottomBar('');
                 console.log((0, messages_1.GITHUB_SCOPE_NEEDED)(scope));
                 await this.handle(scope);
                 return this.assertScope(scope);

@@ -4,6 +4,7 @@ export declare class Command {
     private assume;
     private githubInit;
     private show;
+    private add;
     constructor(name: string);
     run(argv: string[]): Promise<void>;
 }
