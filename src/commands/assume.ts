@@ -15,12 +15,18 @@ import axios from 'axios';
 import { STS } from '@aws-sdk/client-sts';
 import log from 'loglevel';
 import open from 'open';
+import { Show } from './show';
+import inquirer from 'inquirer';
+import { ui } from '../command';
 
 export class Assume {
   scms: Scms;
 
+  show: Show;
+
   constructor() {
     this.scms = new Scms();
+    this.show = new Show();
   }
 
   async list(org?: string, refresh?: boolean): Promise<void> {
@@ -38,12 +44,36 @@ export class Assume {
     console.table(roles.results, ['org', 'provider', 'role']);
   }
 
-  async handle(role: string, headless = false, org?: string, provider?: string): Promise<void> {
+  async handle(role?: string, headless = false, org?: string, provider?: string): Promise<void> {
     log.debug(`Assuming ${role} (headless: ${headless} org: ${org} provider: ${provider})`);
 
     const token = this.scms.getGithubToken();
     if (!token) {
       throw new Error(NO_GITHUB_CLIENT);
+    }
+
+    if (!role && !headless) {
+      const roles = await this.show.fetchRoles(org);
+      if (!roles.length) {
+        throw new Error(`No roles are available to assume`);
+      }
+      ui.updateBottomBar('');
+      const { roleIx } = await inquirer.prompt({
+        type: 'list',
+        name: 'roleIx',
+        message: `What role would you like to assume?`,
+        choices: roles.map((r, ix) => {
+          return { name: `${r.role} [${r.provider}@${r.org}]`, value: ix };
+        }),
+      });
+
+      role = roles[roleIx].role;
+      org = roles[roleIx].org;
+      provider = roles[roleIx].provider;
+    }
+
+    if (!role) {
+      throw new Error(`Please specify a role to assume`);
     }
 
     const idpApi = new IDPApi(
