@@ -12,6 +12,7 @@ import { Show, ShowSubcommands } from './commands/show';
 import inquirer from 'inquirer';
 import { NoTokenError } from './stores/scms';
 import { GithubLogin } from './commands/github-login';
+import { Add, AddSubcommands } from './commands/add';
 // import log from 'loglevel';
 
 // log.setDefaultLevel('DEBUG');
@@ -43,10 +44,13 @@ export class Command {
 
   private show: Show;
 
+  private add: Add;
+
   constructor(private name: string) {
     this.assume = new Assume();
     this.githubInit = new GithubInit();
     this.show = new Show();
+    this.add = new Add();
   }
 
   public async run(argv: string[]): Promise<void> {
@@ -85,20 +89,21 @@ export class Command {
       .command({
         command: 'show [subcommand]',
         describe: 'Show organization configs',
-        handler: async ({ org, subcommand, save, refresh }) =>
+        handler: async ({ org, subcommand, save, refresh, raw }) =>
           loginWrapper('user:email', () =>
             this.show.handle(
               subcommand as ShowSubcommands,
               org as string | undefined,
               save as boolean | undefined,
               refresh as boolean | undefined,
+              raw as boolean | undefined,
             ),
           ),
         builder: {
           subcommand: {
             demand: true,
             type: 'string',
-            choices: ['metadata', 'certificate', 'roles', 'logins', 'orgs'] as string[],
+            choices: ['metadata', 'certificate', 'config', 'roles', 'logins', 'orgs'] as string[],
           },
           org: {
             demand: false,
@@ -116,6 +121,12 @@ export class Command {
             type: 'boolean',
             default: false,
             description: 'Refresh backend config',
+          },
+          raw: {
+            demand: false,
+            type: 'boolean',
+            default: false,
+            description: 'For `config` subcommand, show raw configuration',
           },
         },
       })
@@ -152,6 +163,19 @@ export class Command {
             demand: false,
             type: 'string',
             description: 'Specify the provider',
+          },
+        },
+      })
+      .command({
+        command: 'add [subcommand]',
+        describe: 'Add providers or permissions to the configuration',
+        handler: async ({ subcommand }) =>
+          loginWrapper('repo', () => this.add.handle(subcommand as AddSubcommands)),
+        builder: {
+          subcommand: {
+            demand: true,
+            type: 'string',
+            choices: ['provider', 'permission'] as string[],
           },
         },
       })

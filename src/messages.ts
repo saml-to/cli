@@ -16,8 +16,8 @@ export const TERMINAL_NOT_SUPPORTED = (provider: string, recipient: string): str
   `Role assumption using ${provider} (${recipient}) is not supported by this CLI yet. However, you may request it as a feature: https://github.com/saml-to/cli/issues`;
 export const UNSUPPORTED_REPO_URL = `Only the following repo URLs are supported: https://github.com/{org}/{repo}`;
 export const GITHUB_ACCESS_NEEDED = (org: string, scope: string): string =>
-  `To conitnue, access to scope '${scope}' in '${org}' is needed`;
+  `To continue, access to scope '${scope}' in '${org}' is needed`;
 export const GITHUB_SCOPE_NEEDED = (scope: string): string =>
-  `To conitnue, scope '${scope}' is needed`;
+  `To continue, scope '${scope}' is needed`;
 export const REPO_DOES_NOT_EXIST = (org: string, repo: string): string =>
-  `It doesn't appear ${org}/${repo} exists. Please create it or specify a different repository.`;
+  `${org}/${repo} does not exist. Please create it or specify a different repository.`;

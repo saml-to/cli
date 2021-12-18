@@ -3,14 +3,15 @@ import {
   IDPApi,
   Configuration,
   GithubSlsRestApiRoleResponse,
-  GithubSlsRestApiOrgResponse,
+  GithubSlsRestApiOrgRepoResponse,
 } from '../../api/github-sls-rest-api';
 import { CONFIG_DIR, Scms } from '../stores/scms';
 import fs from 'fs';
 import path from 'path';
 import { ui } from '../command';
+import { dump } from 'js-yaml';
 
-export type ShowSubcommands = 'metadata' | 'certificate' | 'roles' | 'logins' | 'orgs';
+export type ShowSubcommands = 'metadata' | 'certificate' | 'roles' | 'logins' | 'orgs' | 'config';
 
 export class Show {
   scms: Scms;
@@ -24,6 +25,7 @@ export class Show {
     org?: string,
     save?: boolean,
     refresh?: boolean,
+    raw?: boolean,
   ): Promise<void> {
     switch (subcommand) {
       case 'orgs': {
@@ -55,6 +57,9 @@ export class Show {
       case 'certificate': {
         return this.showCertificate(org, save);
       }
+      case 'config': {
+        return this.showConfig(org, save, raw);
+      }
       default:
         break;
     }
@@ -62,15 +67,28 @@ export class Show {
     throw new Error(`Unknown subcommand: ${subcommand}`);
   }
 
-  public async fetchConfig(org: string): Promise<string> {
+  public async fetchConfigYaml(org: string, raw = false): Promise<string> {
     const accessToken = this.scms.getGithubToken();
     const idpApi = new IDPApi(
       new Configuration({
         accessToken: accessToken,
       }),
     );
-    const { data: result } = await idpApi.getOrgConfig(org);
-    return JSON.stringify(result, null, 2);
+    const { data: result } = await idpApi.getOrgConfig(org, raw);
+    return `---
+${dump(result)}`;
+  }
+
+  private async showConfig(org: string, save?: boolean, raw?: boolean): Promise<void> {
+    const config = await this.fetchConfigYaml(org, raw);
+    if (!save) {
+      console.log(config);
+    } else {
+      const location = path.join(CONFIG_DIR, `${org}-config.yaml`);
+      fs.writeFileSync(location, config);
+      ui.updateBottomBar('');
+      console.log(`Config saved to ${location}`);
+    }
   }
 
   public async fetchMetadataXml(org: string): Promise<string> {
@@ -117,15 +135,15 @@ export class Show {
     }
   }
 
-  public async fetchOrgs(): Promise<GithubSlsRestApiOrgResponse[]> {
+  public async fetchOrgs(): Promise<GithubSlsRestApiOrgRepoResponse[]> {
     const accessToken = this.scms.getGithubToken();
     const idpApi = new IDPApi(
       new Configuration({
         accessToken: accessToken,
       }),
     );
-    const { data: roles } = await idpApi.listOrgs();
-    return roles.results;
+    const { data: orgs } = await idpApi.listOrgRepos();
+    return orgs.results;
   }
 
   private async showOrgs(save?: boolean): Promise<void> {

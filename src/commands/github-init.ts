@@ -4,13 +4,27 @@ import log from 'loglevel';
 import { GITHUB_ACCESS_NEEDED, NO_GITHUB_CLIENT, REPO_DOES_NOT_EXIST } from '../messages';
 import { GithubLogin } from './github-login';
 import inquirer from 'inquirer';
-import { IDPApi, Configuration } from '../../api/github-sls-rest-api';
+import {
+  IDPApi,
+  Configuration,
+  GithubSlsRestApiConfigV20211212,
+  GithubSlsRestApiConfigV20211212VersionEnum,
+} from '../../api/github-sls-rest-api';
 import { Scms } from '../stores/scms';
 import { Show } from './show';
 import { ui } from '../command';
+import { RequestError } from '@octokit/request-error';
+import { dump } from 'js-yaml';
 
-const CONFIG_FILE = 'saml-to.yml';
+export const CONFIG_FILE = 'saml-to.yml';
 const REPO_REGEX = /^.*github\.com[:/]+(?<org>.*)\/(?<repo>.*?)(.git)*$/gm;
+
+const EMPTY_CONFIG: GithubSlsRestApiConfigV20211212 = {
+  version: GithubSlsRestApiConfigV20211212VersionEnum._20211212,
+  variables: {},
+  providers: {},
+  permissions: {},
+};
 
 // type ExampleConfig = {
 //   name: string;
@@ -55,6 +69,7 @@ export class GithubInit {
         type: 'input',
         name: 'repoInput',
         message: `What is the full URL of the repository that will store the \`${CONFIG_FILE}\` configuration file?
+(e.g. https://github.com/MyOrg/saml-to)
 `,
       });
 
@@ -127,11 +142,71 @@ export class GithubInit {
 
     ui.updateBottomBar(`Checking access to ${org}/${repo}...`);
     try {
-      await github.repos.get({ owner: org, repo });
+      const { data: repository } = await github.repos.get({ owner: org, repo });
+      if (repository.visibility === 'public') {
+        ui.updateBottomBar('');
+        const { makePrivate } = await inquirer.prompt({
+          type: 'confirm',
+          name: 'makePrivate',
+          message: `It's recommended to keep ${org}/${repo} as a private repository, would you like to convert it to a private repository?`,
+        });
+        if (makePrivate) {
+          await github.repos.update({ owner: org, repo, visibility: 'private' });
+        } else {
+          console.warn(`WARN: ${org}/${repo} is publicly visible, but it does not need to be!`);
+        }
+      }
     } catch (e) {
       if (e instanceof Error) {
-        log.debug(e.message);
-        throw new Error(REPO_DOES_NOT_EXIST(org, repo));
+        ui.updateBottomBar('');
+        const { createRepo } = await inquirer.prompt({
+          type: 'confirm',
+          name: 'createRepo',
+          message: `It appears that \`${org}/${repo}\` does not exist yet, do you want to create it?`,
+        });
+
+        if (!createRepo) {
+          throw new Error(REPO_DOES_NOT_EXIST(org, repo));
+        }
+
+        ui.updateBottomBar(`Creating repository ${org}/${repo}...`);
+        if (user.login.toLowerCase() !== org.toLowerCase()) {
+          await github.repos.createInOrg({ name: repo, org, visibility: 'private' });
+        } else {
+          await github.repos.createForAuthenticatedUser({ name: repo, visibility: 'private' });
+        }
+        return this.assertRepo(org, repo, scope);
+      }
+    }
+
+    ui.updateBottomBar(`Checking for existing config...`);
+    try {
+      await github.repos.getContent({ owner: org, repo, path: CONFIG_FILE });
+    } catch (e) {
+      if (e instanceof RequestError && e.status === 404) {
+        ui.updateBottomBar('');
+        const { createConfig } = await inquirer.prompt({
+          type: 'confirm',
+          name: 'createConfig',
+          message: `It appears that \`${org}/${repo}\` does not contain \`${CONFIG_FILE}\` yet. Would you like to create an empty config file?`,
+        });
+        if (!createConfig) {
+          console.warn(`Skipping creation of \`${CONFIG_FILE}\`, please be sure to create it!`);
+          return;
+        }
+
+        await github.repos.createOrUpdateFileContents({
+          owner: org,
+          repo,
+          content: Buffer.from(
+            `---
+${dump(EMPTY_CONFIG)}
+`,
+            'utf8',
+          ).toString('base64'),
+          message: `initial saml.to configuration`,
+          path: CONFIG_FILE,
+        });
       }
     }
   }

@@ -129,6 +129,7 @@ export class GithubLogin {
     } catch (e) {
       if (e instanceof Error) {
         log.debug(e.message);
+        ui.updateBottomBar('');
         console.log(GITHUB_SCOPE_NEEDED(scope));
         await this.handle(scope);
         return this.assertScope(scope);
