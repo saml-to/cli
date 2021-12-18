@@ -16,17 +16,28 @@ class Assume {
     constructor() {
         this.scms = new scms_1.Scms();
     }
-    async handle(role, headless = false, org, repo, provider) {
-        loglevel_1.default.debug(`Assuming ${role} (headless: ${headless} org: ${org} repo: ${repo} provider: ${provider})`);
+    async list(org, refresh) {
+        const accessToken = this.scms.getGithubToken();
+        if (!accessToken) {
+            throw new Error(messages_1.NO_GITHUB_CLIENT);
+        }
+        const idpApi = new github_sls_rest_api_1.IDPApi(new github_sls_rest_api_1.Configuration({
+            accessToken: accessToken,
+        }));
+        const { data: roles } = await idpApi.listRoles(org, refresh);
+        console.table(roles.results, ['org', 'provider', 'role']);
+    }
+    async handle(role, headless = false, org, provider) {
+        loglevel_1.default.debug(`Assuming ${role} (headless: ${headless} org: ${org} provider: ${provider})`);
         const token = this.scms.getGithubToken();
         if (!token) {
-            throw new Error(messages_1.NOT_LOGGED_IN);
+            throw new Error(messages_1.NO_GITHUB_CLIENT);
         }
         const idpApi = new github_sls_rest_api_1.IDPApi(new github_sls_rest_api_1.Configuration({
             accessToken: token,
         }));
         try {
-            const { data: response } = await idpApi.assumeRole(role, org, repo, provider);
+            const { data: response } = await idpApi.assumeRole(role, org, provider);
             if (headless) {
                 await this.assumeTerminal(response);
             }
@@ -39,7 +50,7 @@ class Assume {
                 if (e.response.status === 403) {
                     throw new Error((0, messages_1.ERROR_ASSUMING_ROLE)(role, `Reason: ${e.response.data.message}`));
                 }
-                else if (e.response.status === 409) {
+                else if (e.response.status === 404) {
                     throw new Error((0, messages_1.MULTIPLE_ROLES)(role, `Reason: ${e.response.data.message}`));
                 }
                 else {

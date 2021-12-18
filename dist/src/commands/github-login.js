@@ -8,6 +8,9 @@ const auth_sls_rest_api_1 = require("../../api/auth-sls-rest-api");
 const axios_1 = __importDefault(require("axios"));
 const moment_1 = __importDefault(require("moment"));
 const scms_1 = require("../stores/scms");
+const loglevel_1 = __importDefault(require("loglevel"));
+const messages_1 = require("../messages");
+const command_1 = require("../command");
 class GithubLogin {
     scms;
     constructor() {
@@ -22,6 +25,7 @@ class GithubLogin {
             scope,
         }, { headers: { Accept: 'application/json' } });
         const { verification_uri: verificationUri, user_code: userCode } = response.data;
+        command_1.ui.updateBottomBar('');
         console.log(`Please open the browser to ${verificationUri}, and enter the code:`);
         console.log(`\n${userCode}\n`);
         const accessTokenResponse = await this.getAccessToken(clientId, response.data, (0, moment_1.default)().add(response.data.expires_in, 'second'));
@@ -56,6 +60,36 @@ class GithubLogin {
             })
                 .catch((error) => reject(error));
         });
+    }
+    async assertScope(scope) {
+        command_1.ui.updateBottomBar('Checking scopes...');
+        const { github } = await this.scms.loadClients();
+        if (!github) {
+            await this.handle(scope);
+            return this.assertScope(scope);
+        }
+        const { headers } = await github.users.getAuthenticated();
+        try {
+            this.assertScopes(headers, scope);
+        }
+        catch (e) {
+            if (e instanceof Error) {
+                loglevel_1.default.debug(e.message);
+                console.log((0, messages_1.GITHUB_SCOPE_NEEDED)(scope));
+                await this.handle(scope);
+                return this.assertScope(scope);
+            }
+            throw e;
+        }
+    }
+    assertScopes(headers, expectedScope) {
+        const xOauthScopes = headers['x-oauth-scopes'];
+        loglevel_1.default.debug('Current scopes:', xOauthScopes);
+        const scopes = xOauthScopes.split(' ');
+        if (scopes.includes(expectedScope)) {
+            return;
+        }
+        throw new Error(`Missing scope. Expected:${expectedScope} Actual:${scopes}`);
     }
 }
 exports.GithubLogin = GithubLogin;

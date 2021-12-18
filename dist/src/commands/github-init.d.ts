@@ -6,12 +6,8 @@ export declare class GithubInit {
     scms: Scms;
     show: Show;
     constructor();
-    handle(repoUrl: string): Promise<boolean>;
-    private assertRepo;
-    private assertScopes;
-    private assertConfig;
-    private listExamples;
-    createConfig(org: string, repo: string, file?: string): Promise<void>;
+    handle(scm: string, repoUrl?: string, force?: boolean): Promise<boolean>;
+    assertRepo(org: string, repo: string, scope: string): Promise<void>;
     private registerRepo;
 }
 //# sourceMappingURL=github-init.d.ts.map

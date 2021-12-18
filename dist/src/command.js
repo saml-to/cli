@@ -9,28 +9,42 @@ exports.Command = exports.ui = void 0;
 const helpers_1 = require("yargs/helpers");
 // import log from 'loglevel';
 const yargs_1 = __importDefault(require("yargs"));
-const list_roles_1 = require("./commands/list-roles");
 const axios_1 = __importDefault(require("axios"));
-const github_login_1 = require("./commands/github-login");
 const messages_1 = require("./messages");
 const assume_1 = require("./commands/assume");
 const github_init_1 = require("./commands/github-init");
 const show_1 = require("./commands/show");
 const inquirer_1 = __importDefault(require("inquirer"));
+const scms_1 = require("./stores/scms");
+const github_login_1 = require("./commands/github-login");
 // import log from 'loglevel';
 // log.setDefaultLevel('DEBUG');
+process.on('SIGINT', () => {
+    process.exit(0);
+});
+const loginWrapper = async (scope, fn) => {
+    try {
+        await fn();
+    }
+    catch (e) {
+        if (e instanceof scms_1.NoTokenError) {
+            const githubLogin = new github_login_1.GithubLogin();
+            await githubLogin.handle(scope);
+            await fn();
+        }
+        else {
+            throw e;
+        }
+    }
+};
 exports.ui = new inquirer_1.default.ui.BottomBar();
 class Command {
     name;
-    listRoles;
-    githubLogin;
     assume;
     githubInit;
     show;
     constructor(name) {
         this.name = name;
-        this.githubLogin = new github_login_1.GithubLogin();
-        this.listRoles = new list_roles_1.ListRoles();
         this.assume = new assume_1.Assume();
         this.githubInit = new github_init_1.GithubInit();
         this.show = new show_1.Show();
@@ -39,14 +53,12 @@ class Command {
         const ya = yargs_1.default
             .scriptName(this.name)
             .command({
-            command: 'login [scm]',
-            describe: 'Generate and locally store a token from the SCM (e.g. GitHub)',
-            handler: ({ scm }) => {
-                if (scm === 'github') {
-                    return this.githubLogin.handle();
-                }
-                else {
-                    throw new Error(`Unknown scm provider: ${scm}`);
+            command: 'init [scm]',
+            describe: 'Set a repository for the saml.to configuration',
+            handler: async ({ scm, repoUrl, force }) => {
+                const handled = await this.githubInit.handle(scm, repoUrl, force);
+                if (!handled) {
+                    throw new Error(messages_1.UNSUPPORTED_REPO_URL);
                 }
             },
             builder: {
@@ -55,56 +67,60 @@ class Command {
                     choices: ['github'],
                     default: 'github',
                 },
-            },
-        })
-            .command({
-            command: 'init [repoUrl]',
-            describe: 'Initialize a repository to use with saml.to',
-            handler: async ({ repoUrl }) => {
-                const handled = await this.githubInit.handle(repoUrl);
-                if (!handled) {
-                    throw new Error(messages_1.UNSUPPORTED_REPO_URL);
-                }
-            },
-            builder: {
                 repoUrl: {
-                    demand: true,
+                    demand: false,
                     type: 'string',
+                },
+                force: {
+                    demand: false,
+                    type: 'boolean',
+                    default: false,
                 },
             },
         })
             .command({
-            command: 'show [org] [subcommand]',
+            command: 'show [subcommand]',
             describe: 'Show organization configs',
-            handler: async ({ org, subcommand }) => {
-                await this.show.handle(subcommand, org);
-            },
+            handler: async ({ org, subcommand, save, refresh }) => loginWrapper('user:email', () => this.show.handle(subcommand, org, save, refresh)),
             builder: {
-                org: {
-                    demand: true,
-                    type: 'string',
-                },
                 subcommand: {
                     demand: true,
                     type: 'string',
-                    choices: ['config', 'metadata', 'certificate'],
-                    default: 'config',
+                    choices: ['metadata', 'certificate', 'roles', 'logins', 'orgs'],
+                },
+                org: {
+                    demand: false,
+                    type: 'string',
+                    description: 'Specify an organization',
+                },
+                save: {
+                    demand: false,
+                    type: 'boolean',
+                    default: false,
+                    description: 'Output to a file',
+                },
+                refresh: {
+                    demand: false,
+                    type: 'boolean',
+                    default: false,
+                    description: 'Refresh backend config',
                 },
             },
         })
             .command({
-            command: 'list-roles',
-            describe: 'List available roles for assumption',
-            handler: () => this.listRoles.handle(),
-        })
-            .command({
             command: 'assume [role]',
-            describe: 'Assume a role. Use the `list-roles` command to see available role',
-            handler: ({ role, org, repo, provider, headless }) => this.assume.handle(role, headless, org, repo, provider),
+            describe: 'Assume a role. Use the `show roles` command to show available roles',
+            handler: ({ role, org, provider, headless }) => loginWrapper('user:email', () => this.assume.handle(role, headless, org, provider)),
             builder: {
                 role: {
-                    demand: true,
+                    demand: false,
                     type: 'string',
+                    description: 'The role to assume',
+                },
+                org: {
+                    demand: false,
+                    type: 'string',
+                    description: 'Specify an organization',
                 },
                 headless: {
                     demand: false,
@@ -112,19 +128,13 @@ class Command {
                     default: false,
                     description: 'Output access credentials to the terminal',
                 },
-                org: {
-                    demand: false,
-                    type: 'string',
-                    description: 'Specify the organization with SAML.to configuration',
-                },
                 provider: {
                     demand: false,
                     type: 'string',
-                    description: 'Specify a specific provider',
+                    description: 'Specify the provider',
                 },
             },
         })
-            .option('debug', { default: false })
             .help()
             .showHelpOnFail(true)
             .strict()
@@ -133,7 +143,7 @@ class Command {
             if (axios_1.default.isAxiosError(error)) {
                 if (error.response && error.response.status === 401) {
                     exports.ui.updateBottomBar('');
-                    console.error(messages_1.NOT_LOGGED_IN);
+                    console.error('Unauthorized');
                 }
                 else {
                     exports.ui.updateBottomBar('');
