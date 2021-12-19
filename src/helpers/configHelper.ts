@@ -32,7 +32,7 @@ ${dump(result)}`;
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types,@typescript-eslint/no-explicit-any
     config: any,
     title: string,
-  ): Promise<void> {
+  ): Promise<boolean> {
     ui.updateBottomBar('');
 
     const configYaml = `
@@ -56,7 +56,7 @@ ${configYaml}
       choices: [
         {
           name: 'Do not change anything',
-          value: '',
+          value: 'nothing',
         },
         {
           name: `Commit directly to \`${org}/${repo}\``,
@@ -65,13 +65,16 @@ ${configYaml}
       ],
     });
 
-    if (type === 'commit') {
-      return this.commitConfig(org, repo, configYaml, title);
+    if (type === 'nothing') {
+      ui.updateBottomBar('');
+      console.log('All done. No changes were made.');
+      return false;
     }
 
-    ui.updateBottomBar('');
-    console.log('All done. No changes were made.');
-    return;
+    if (type === 'commit') {
+      await this.commitConfig(org, repo, configYaml, title);
+    }
+    return true;
   }
 
   private async commitConfig(

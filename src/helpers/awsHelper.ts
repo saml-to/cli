@@ -22,7 +22,7 @@ export class AwsHelper {
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types,@typescript-eslint/no-explicit-any
-  async promptProvider(org: string, repo: string, config: any): Promise<void> {
+  async promptProvider(org: string, repo: string, config: any): Promise<boolean> {
     switch (config.version) {
       case '20211212':
         return this.promptProviderV20211212(org, repo, config as GithubSlsRestApiConfigV20211212);
@@ -35,7 +35,7 @@ export class AwsHelper {
     org: string,
     repo: string,
     config: GithubSlsRestApiConfigV20211212,
-  ): Promise<void> {
+  ): Promise<boolean> {
     if (config.providers && config.providers.aws) {
       throw new Error(
         'An `aws` provider already exists, please manually edit the configuration to add another',
@@ -84,7 +84,7 @@ export class AwsHelper {
     org: string,
     repo: string,
     config: GithubSlsRestApiConfigV20211212,
-  ): Promise<void> {
+  ): Promise<boolean> {
     config.permissions = config.permissions || {};
     config.permissions.aws = config.permissions.aws || {};
     config.permissions.aws.roles = config.permissions.aws.roles || [];
