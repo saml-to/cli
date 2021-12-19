@@ -12,24 +12,48 @@ const awsHelper_1 = require("../helpers/awsHelper");
 const github_init_1 = require("./github-init");
 const configHelper_1 = require("../helpers/configHelper");
 const orgHelper_1 = require("../helpers/orgHelper");
+const genericHelper_1 = require("../helpers/genericHelper");
 class Add {
     show;
     awsHelper;
     configHelper;
     orgHelper;
+    genericHelper;
     constructor() {
         this.show = new show_1.Show();
         this.awsHelper = new awsHelper_1.AwsHelper();
         this.configHelper = new configHelper_1.ConfigHelper();
         this.orgHelper = new orgHelper_1.OrgHelper();
+        this.genericHelper = new genericHelper_1.GenericHelper();
     }
     async handle(subcommand) {
         switch (subcommand) {
             case 'provider': {
-                return this.addProvider();
+                const added = await this.addProvider();
+                if (added) {
+                    console.log(`
+Next, you may add permissions by running:
+\`add permission\`
+
+Additional providers can be added by running \`add provider\` again.
+          `);
+                }
+                break;
             }
             case 'permission': {
-                return this.addPermission();
+                const added = await this.addPermission();
+                if (added) {
+                    console.log(`
+Finally, the users that were provided can login or assume roles:
+- \`login\`
+- \`assume\`
+
+Or, you can direct them to visit: https://saml.to/sso
+
+Additional permissions can be added by running \`add permission\` again.
+          `);
+                }
+                break;
             }
             default:
                 throw new Error(`Unknown subcommand: ${subcommand}`);
@@ -56,17 +80,25 @@ class Add {
                 { name: 'Other', value: 'other' },
             ],
         });
+        let added = false;
         switch (type) {
             case 'aws': {
-                await this.awsHelper.promptProvider(org, repo, config);
+                added = await this.awsHelper.promptProvider(org, repo, config);
+                break;
+            }
+            case 'other': {
+                added = await this.genericHelper.promptProvider(org, repo, config);
                 break;
             }
             default:
                 throw new Error(`Unknown type: ${type}`);
         }
-        await this.configHelper.fetchConfigYaml(org);
-        command_1.ui.updateBottomBar('');
-        console.log('Configuration is valid!');
+        if (added) {
+            await this.configHelper.fetchConfigYaml(org);
+            command_1.ui.updateBottomBar('');
+            console.log('Configuration is valid!');
+        }
+        return added;
     }
     async addPermission() {
         const { org, repo } = await this.orgHelper.promptOrg('log in');
@@ -75,17 +107,21 @@ class Add {
         if (!config.version) {
             throw new Error(`Missing version in config`);
         }
+        let added = false;
         switch (config.version) {
             case '20211212': {
-                await this.addPermissionV20211212(org, repo, config);
+                added = await this.addPermissionV20211212(org, repo, config);
                 break;
             }
             default:
                 throw new Error(`Invalid config version: ${config.version}`);
         }
-        await this.configHelper.fetchConfigYaml(org);
-        command_1.ui.updateBottomBar('');
-        console.log('Configuration is valid!');
+        if (added) {
+            await this.configHelper.fetchConfigYaml(org);
+            command_1.ui.updateBottomBar('');
+            console.log('Configuration is valid!');
+        }
+        return added;
     }
     async addPermissionV20211212(org, repo, config) {
         if (!config.providers || !Object.keys(config.providers).length) {

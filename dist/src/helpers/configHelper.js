@@ -49,7 +49,7 @@ ${configYaml}
             choices: [
                 {
                     name: 'Do not change anything',
-                    value: '',
+                    value: 'nothing',
                 },
                 {
                     name: `Commit directly to \`${org}/${repo}\``,
@@ -57,12 +57,15 @@ ${configYaml}
                 },
             ],
         });
-        if (type === 'commit') {
-            return this.commitConfig(org, repo, configYaml, title);
+        if (type === 'nothing') {
+            command_1.ui.updateBottomBar('');
+            console.log('All done. No changes were made.');
+            return false;
         }
-        command_1.ui.updateBottomBar('');
-        console.log('All done. No changes were made.');
-        return;
+        if (type === 'commit') {
+            await this.commitConfig(org, repo, configYaml, title);
+        }
+        return true;
     }
     async commitConfig(org, repo, configYaml, title) {
         command_1.ui.updateBottomBar(`Updating ${github_init_1.CONFIG_FILE} on ${org}/${repo}`);

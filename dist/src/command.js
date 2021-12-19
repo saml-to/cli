@@ -91,25 +91,6 @@ Once a service provider is configured, you can then run:
             describe: 'Add providers or permissions to the configuration',
             handler: async ({ subcommand }) => {
                 await loginWrapper('repo', () => this.add.handle(subcommand));
-                if (subcommand === 'provider') {
-                    console.log(`
-Next, you may add permissions by running:
-\`${this.name} add permission\`
-
-Additional providers can be added by running \`${this.name} add provider\` again.
-            `);
-                }
-                if (subcommand === 'permission') {
-                    console.log(`
-Finally, the users that were provided can login or assume roles:
- - \`${this.name} login\`
- - \`${this.name} assume\`
-
-Or, you can direct them to visit: https://saml.to/sso
-
-Additional permissions can be added by running \`${this.name} add permission\` again.
-            `);
-                }
             },
             builder: {
                 subcommand: {
