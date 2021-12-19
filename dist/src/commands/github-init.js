@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GithubInit = void 0;
+exports.GithubInit = exports.CONFIG_FILE = void 0;
 // import { RequestError } from '@octokit/request-error';
 // import { RequestError } from '@octokit/request-error';
 const loglevel_1 = __importDefault(require("loglevel"));
@@ -14,8 +14,16 @@ const github_sls_rest_api_1 = require("../../api/github-sls-rest-api");
 const scms_1 = require("../stores/scms");
 const show_1 = require("./show");
 const command_1 = require("../command");
-const CONFIG_FILE = 'saml-to.yml';
+const request_error_1 = require("@octokit/request-error");
+const js_yaml_1 = require("js-yaml");
+exports.CONFIG_FILE = 'saml-to.yml';
 const REPO_REGEX = /^.*github\.com[:/]+(?<org>.*)\/(?<repo>.*?)(.git)*$/gm;
+const EMPTY_CONFIG = {
+    version: github_sls_rest_api_1.GithubSlsRestApiConfigV20211212VersionEnum._20211212,
+    variables: {},
+    providers: {},
+    permissions: {},
+};
 // type ExampleConfig = {
 //   name: string;
 //   downloadUrl: string;
@@ -49,7 +57,8 @@ class GithubInit {
             const { repoInput } = await inquirer_1.default.prompt({
                 type: 'input',
                 name: 'repoInput',
-                message: `What is the full URL of the repository that will store the \`${CONFIG_FILE}\` configuration file?
+                message: `What is the full URL of the repository that will store the \`${exports.CONFIG_FILE}\` configuration file?
+(e.g. https://github.com/MyOrg/saml-to)
 `,
             });
             repoUrl = repoInput;
@@ -109,12 +118,68 @@ class GithubInit {
         }
         command_1.ui.updateBottomBar(`Checking access to ${org}/${repo}...`);
         try {
-            await github.repos.get({ owner: org, repo });
+            const { data: repository } = await github.repos.get({ owner: org, repo });
+            if (repository.visibility === 'public') {
+                command_1.ui.updateBottomBar('');
+                const { makePrivate } = await inquirer_1.default.prompt({
+                    type: 'confirm',
+                    name: 'makePrivate',
+                    message: `It's recommended to keep ${org}/${repo} as a private repository, would you like to convert it to a private repository?`,
+                });
+                if (makePrivate) {
+                    await github.repos.update({ owner: org, repo, visibility: 'private' });
+                }
+                else {
+                    console.warn(`WARN: ${org}/${repo} is publicly visible, but it does not need to be!`);
+                }
+            }
         }
         catch (e) {
             if (e instanceof Error) {
-                loglevel_1.default.debug(e.message);
-                throw new Error((0, messages_1.REPO_DOES_NOT_EXIST)(org, repo));
+                command_1.ui.updateBottomBar('');
+                const { createRepo } = await inquirer_1.default.prompt({
+                    type: 'confirm',
+                    name: 'createRepo',
+                    message: `It appears that \`${org}/${repo}\` does not exist yet, do you want to create it?`,
+                });
+                if (!createRepo) {
+                    throw new Error((0, messages_1.REPO_DOES_NOT_EXIST)(org, repo));
+                }
+                command_1.ui.updateBottomBar(`Creating repository ${org}/${repo}...`);
+                if (user.login.toLowerCase() !== org.toLowerCase()) {
+                    await github.repos.createInOrg({ name: repo, org, visibility: 'private' });
+                }
+                else {
+                    await github.repos.createForAuthenticatedUser({ name: repo, visibility: 'private' });
+                }
+                return this.assertRepo(org, repo, scope);
+            }
+        }
+        command_1.ui.updateBottomBar(`Checking for existing config...`);
+        try {
+            await github.repos.getContent({ owner: org, repo, path: exports.CONFIG_FILE });
+        }
+        catch (e) {
+            if (e instanceof request_error_1.RequestError && e.status === 404) {
+                command_1.ui.updateBottomBar('');
+                const { createConfig } = await inquirer_1.default.prompt({
+                    type: 'confirm',
+                    name: 'createConfig',
+                    message: `It appears that \`${org}/${repo}\` does not contain \`${exports.CONFIG_FILE}\` yet. Would you like to create an empty config file?`,
+                });
+                if (!createConfig) {
+                    console.warn(`Skipping creation of \`${exports.CONFIG_FILE}\`, please be sure to create it!`);
+                    return;
+                }
+                await github.repos.createOrUpdateFileContents({
+                    owner: org,
+                    repo,
+                    content: Buffer.from(`---
+${(0, js_yaml_1.dump)(EMPTY_CONFIG)}
+`, 'utf8').toString('base64'),
+                    message: `initial saml.to configuration`,
+                    path: exports.CONFIG_FILE,
+                });
             }
         }
     }

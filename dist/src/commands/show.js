@@ -10,12 +10,13 @@ const scms_1 = require("../stores/scms");
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const command_1 = require("../command");
+const js_yaml_1 = require("js-yaml");
 class Show {
     scms;
     constructor() {
         this.scms = new scms_1.Scms();
     }
-    async handle(subcommand, org, save, refresh) {
+    async handle(subcommand, org, save, refresh, raw) {
         switch (subcommand) {
             case 'orgs': {
                 await this.showOrgs(save);
@@ -44,18 +45,34 @@ class Show {
             case 'certificate': {
                 return this.showCertificate(org, save);
             }
+            case 'config': {
+                return this.showConfig(org, save, raw);
+            }
             default:
                 break;
         }
         throw new Error(`Unknown subcommand: ${subcommand}`);
     }
-    async fetchConfig(org) {
+    async fetchConfigYaml(org, raw = false) {
         const accessToken = this.scms.getGithubToken();
         const idpApi = new github_sls_rest_api_1.IDPApi(new github_sls_rest_api_1.Configuration({
             accessToken: accessToken,
         }));
-        const { data: result } = await idpApi.getOrgConfig(org);
-        return JSON.stringify(result, null, 2);
+        const { data: result } = await idpApi.getOrgConfig(org, raw);
+        return `---
+${(0, js_yaml_1.dump)(result)}`;
+    }
+    async showConfig(org, save, raw) {
+        const config = await this.fetchConfigYaml(org, raw);
+        if (!save) {
+            console.log(config);
+        }
+        else {
+            const location = path_1.default.join(scms_1.CONFIG_DIR, `${org}-config.yaml`);
+            fs_1.default.writeFileSync(location, config);
+            command_1.ui.updateBottomBar('');
+            console.log(`Config saved to ${location}`);
+        }
     }
     async fetchMetadataXml(org) {
         const accessToken = this.scms.getGithubToken();
@@ -100,8 +117,8 @@ class Show {
         const idpApi = new github_sls_rest_api_1.IDPApi(new github_sls_rest_api_1.Configuration({
             accessToken: accessToken,
         }));
-        const { data: roles } = await idpApi.listOrgs();
-        return roles.results;
+        const { data: orgs } = await idpApi.listOrgRepos();
+        return orgs.results;
     }
     async showOrgs(save) {
         const orgs = await this.fetchOrgs();

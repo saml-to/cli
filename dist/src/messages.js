@@ -15,10 +15,10 @@ exports.MULTIPLE_ROLES = MULTIPLE_ROLES;
 const TERMINAL_NOT_SUPPORTED = (provider, recipient) => `Role assumption using ${provider} (${recipient}) is not supported by this CLI yet. However, you may request it as a feature: https://github.com/saml-to/cli/issues`;
 exports.TERMINAL_NOT_SUPPORTED = TERMINAL_NOT_SUPPORTED;
 exports.UNSUPPORTED_REPO_URL = `Only the following repo URLs are supported: https://github.com/{org}/{repo}`;
-const GITHUB_ACCESS_NEEDED = (org, scope) => `To conitnue, access to scope '${scope}' in '${org}' is needed`;
+const GITHUB_ACCESS_NEEDED = (org, scope) => `To continue, access to scope '${scope}' in '${org}' is needed`;
 exports.GITHUB_ACCESS_NEEDED = GITHUB_ACCESS_NEEDED;
-const GITHUB_SCOPE_NEEDED = (scope) => `To conitnue, scope '${scope}' is needed`;
+const GITHUB_SCOPE_NEEDED = (scope) => `To continue, scope '${scope}' is needed`;
 exports.GITHUB_SCOPE_NEEDED = GITHUB_SCOPE_NEEDED;
-const REPO_DOES_NOT_EXIST = (org, repo) => `It doesn't appear ${org}/${repo} exists. Please create it or specify a different repository.`;
+const REPO_DOES_NOT_EXIST = (org, repo) => `${org}/${repo} does not exist. Please create it or specify a different repository.`;
 exports.REPO_DOES_NOT_EXIST = REPO_DOES_NOT_EXIST;
 //# sourceMappingURL=messages.js.map
