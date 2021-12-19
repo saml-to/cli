@@ -8,6 +8,7 @@ const inquirer_1 = __importDefault(require("inquirer"));
 const command_1 = require("../command");
 const configHelper_1 = require("./configHelper");
 const genericHelper_1 = require("./genericHelper");
+const client_sts_1 = require("@aws-sdk/client-sts");
 class AwsHelper {
     configHelper;
     genericHelper;
@@ -112,6 +113,28 @@ class AwsHelper {
         return this.configHelper.promptConfigUpdate(org, repo, config, `grant aws permissions to role ${roleArn}
 
 ${githubLogins.map((l) => `- ${l}`)}`);
+    }
+    async assumeAws(samlResponse) {
+        const sts = new client_sts_1.STS({});
+        const opts = samlResponse.sdkOptions;
+        if (!opts) {
+            throw new Error('Missing sdk options from saml response');
+        }
+        const response = await sts.assumeRoleWithSAML({
+            ...opts,
+            SAMLAssertion: samlResponse.samlResponse,
+        });
+        if (!response.Credentials ||
+            !response.Credentials.AccessKeyId ||
+            !response.Credentials.SecretAccessKey ||
+            !response.Credentials.SessionToken) {
+            throw new Error('Missing credentials');
+        }
+        this.genericHelper.outputEnv({
+            AWS_ACCESS_KEY_ID: response.Credentials.AccessKeyId,
+            AWS_SECRET_ACCESS_KEY: response.Credentials.SecretAccessKey,
+            AWS_SESSION_TOKEN: response.Credentials.SessionToken,
+        });
     }
 }
 exports.AwsHelper = AwsHelper;

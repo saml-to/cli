@@ -8,18 +8,20 @@ const github_sls_rest_api_1 = require("../../api/github-sls-rest-api");
 const messages_1 = require("../messages");
 const scms_1 = require("../stores/scms");
 const axios_1 = __importDefault(require("axios"));
-const client_sts_1 = require("@aws-sdk/client-sts");
 const loglevel_1 = __importDefault(require("loglevel"));
 const open_1 = __importDefault(require("open"));
 const show_1 = require("./show");
 const inquirer_1 = __importDefault(require("inquirer"));
 const command_1 = require("../command");
+const awsHelper_1 = require("../helpers/awsHelper");
 class Assume {
     scms;
     show;
+    awsHelper;
     constructor() {
         this.scms = new scms_1.Scms();
         this.show = new show_1.Show();
+        this.awsHelper = new awsHelper_1.AwsHelper();
     }
     async list(org, refresh) {
         const accessToken = this.scms.getGithubToken();
@@ -92,50 +94,10 @@ class Assume {
         await (0, open_1.default)(samlResponse.browserUri);
     }
     async assumeTerminal(samlResponse) {
-        switch (samlResponse.recipient) {
-            case 'https://signin.aws.amazon.com/saml':
-                await this.assumeAws(samlResponse);
-                break;
-            default:
-                throw new Error((0, messages_1.TERMINAL_NOT_SUPPORTED)(samlResponse.provider, samlResponse.recipient));
+        if (samlResponse.recipient.endsWith('.amazon.com/saml')) {
+            return this.awsHelper.assumeAws(samlResponse);
         }
-    }
-    async assumeAws(samlResponse) {
-        loglevel_1.default.debug(`Assuming AWS role ${samlResponse.role}`);
-        const sts = new client_sts_1.STS({});
-        const opts = samlResponse.sdkOptions;
-        if (!opts) {
-            throw new Error('Missing sdk options from saml response');
-        }
-        const response = await sts.assumeRoleWithSAML({
-            ...opts,
-            SAMLAssertion: samlResponse.samlResponse,
-        });
-        if (!response.Credentials ||
-            !response.Credentials.AccessKeyId ||
-            !response.Credentials.SecretAccessKey ||
-            !response.Credentials.SessionToken) {
-            throw new Error('Missing credentials');
-        }
-        this.outputEnv({
-            AWS_ACCESS_KEY_ID: response.Credentials.AccessKeyId,
-            AWS_SECRET_ACCESS_KEY: response.Credentials.SecretAccessKey,
-            AWS_SESSION_TOKEN: response.Credentials.SessionToken,
-        });
-    }
-    outputEnv(vars) {
-        const { platform } = process;
-        let prefix = 'export';
-        switch (platform) {
-            case 'win32':
-                prefix = 'setx';
-                break;
-            default:
-                break;
-        }
-        Object.entries(vars).forEach(([key, value]) => {
-            console.log(`${prefix} ${key}="${value}"`);
-        });
+        throw new Error((0, messages_1.TERMINAL_NOT_SUPPORTED)(samlResponse.provider, samlResponse.recipient));
     }
 }
 exports.Assume = Assume;

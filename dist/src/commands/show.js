@@ -10,11 +10,16 @@ const scms_1 = require("../stores/scms");
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const command_1 = require("../command");
-const js_yaml_1 = require("js-yaml");
+const configHelper_1 = require("../helpers/configHelper");
+const orgHelper_1 = require("../helpers/orgHelper");
 class Show {
     scms;
+    configHelper;
+    orgHelper;
     constructor() {
         this.scms = new scms_1.Scms();
+        this.configHelper = new configHelper_1.ConfigHelper();
+        this.orgHelper = new orgHelper_1.OrgHelper();
     }
     async handle(subcommand, org, save, refresh, raw) {
         switch (subcommand) {
@@ -53,17 +58,8 @@ class Show {
         }
         throw new Error(`Unknown subcommand: ${subcommand}`);
     }
-    async fetchConfigYaml(org, raw = false) {
-        const accessToken = this.scms.getGithubToken();
-        const idpApi = new github_sls_rest_api_1.IDPApi(new github_sls_rest_api_1.Configuration({
-            accessToken: accessToken,
-        }));
-        const { data: result } = await idpApi.getOrgConfig(org, raw);
-        return `---
-${(0, js_yaml_1.dump)(result)}`;
-    }
     async showConfig(org, save, raw) {
-        const config = await this.fetchConfigYaml(org, raw);
+        const config = await this.configHelper.fetchConfigYaml(org, raw);
         if (!save) {
             console.log(config);
         }
@@ -112,16 +108,8 @@ ${(0, js_yaml_1.dump)(result)}`;
             console.log(`Certificate saved to ${location}`);
         }
     }
-    async fetchOrgs() {
-        const accessToken = this.scms.getGithubToken();
-        const idpApi = new github_sls_rest_api_1.IDPApi(new github_sls_rest_api_1.Configuration({
-            accessToken: accessToken,
-        }));
-        const { data: orgs } = await idpApi.listOrgRepos();
-        return orgs.results;
-    }
     async showOrgs(save) {
-        const orgs = await this.fetchOrgs();
+        const orgs = await this.orgHelper.fetchOrgs();
         if (!save) {
             command_1.ui.updateBottomBar('');
             if (!orgs.length) {

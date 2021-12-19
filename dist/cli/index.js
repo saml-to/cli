@@ -6,6 +6,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const loglevel_1 = __importDefault(require("loglevel"));
 const command_1 = require("../src/command");
+process.on('SIGINT', () => {
+    process.exit(0);
+});
 (async () => {
     try {
         loglevel_1.default.debug('Starting CLI');
@@ -14,7 +17,6 @@ const command_1 = require("../src/command");
     }
     catch (e) {
         if (e instanceof Error) {
-            // eslint-disable-next-line no-console
             console.error(`Error: ${e.message}`, e);
             process.exit(-1);
         }
