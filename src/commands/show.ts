@@ -1,23 +1,27 @@
 import { NO_ORG } from '../messages';
-import {
-  IDPApi,
-  Configuration,
-  GithubSlsRestApiRoleResponse,
-  GithubSlsRestApiOrgRepoResponse,
-} from '../../api/github-sls-rest-api';
+import { IDPApi, Configuration, GithubSlsRestApiRoleResponse } from '../../api/github-sls-rest-api';
 import { CONFIG_DIR, Scms } from '../stores/scms';
 import fs from 'fs';
 import path from 'path';
 import { ui } from '../command';
-import { dump } from 'js-yaml';
+import { ConfigHelper } from '../helpers/configHelper';
+import { OrgHelper } from '../helpers/orgHelper';
 
 export type ShowSubcommands = 'metadata' | 'certificate' | 'roles' | 'logins' | 'orgs' | 'config';
 
 export class Show {
   scms: Scms;
 
+  configHelper: ConfigHelper;
+
+  orgHelper: OrgHelper;
+
   constructor() {
     this.scms = new Scms();
+
+    this.configHelper = new ConfigHelper();
+
+    this.orgHelper = new OrgHelper();
   }
 
   public async handle(
@@ -67,20 +71,8 @@ export class Show {
     throw new Error(`Unknown subcommand: ${subcommand}`);
   }
 
-  public async fetchConfigYaml(org: string, raw = false): Promise<string> {
-    const accessToken = this.scms.getGithubToken();
-    const idpApi = new IDPApi(
-      new Configuration({
-        accessToken: accessToken,
-      }),
-    );
-    const { data: result } = await idpApi.getOrgConfig(org, raw);
-    return `---
-${dump(result)}`;
-  }
-
   private async showConfig(org: string, save?: boolean, raw?: boolean): Promise<void> {
-    const config = await this.fetchConfigYaml(org, raw);
+    const config = await this.configHelper.fetchConfigYaml(org, raw);
     if (!save) {
       console.log(config);
     } else {
@@ -135,19 +127,8 @@ ${dump(result)}`;
     }
   }
 
-  public async fetchOrgs(): Promise<GithubSlsRestApiOrgRepoResponse[]> {
-    const accessToken = this.scms.getGithubToken();
-    const idpApi = new IDPApi(
-      new Configuration({
-        accessToken: accessToken,
-      }),
-    );
-    const { data: orgs } = await idpApi.listOrgRepos();
-    return orgs.results;
-  }
-
   private async showOrgs(save?: boolean): Promise<void> {
-    const orgs = await this.fetchOrgs();
+    const orgs = await this.orgHelper.fetchOrgs();
 
     if (!save) {
       ui.updateBottomBar('');

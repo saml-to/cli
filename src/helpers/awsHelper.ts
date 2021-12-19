@@ -2,11 +2,14 @@ import {
   GithubSlsRestApiConfigV20211212,
   GithubSlsRestApiVariableV1,
   GithubSlsRestApiProviderV1,
+  GithubSlsRestApiSamlResponseContainer,
+  GithubSlsRestApiAwsAssumeSdkOptions,
 } from '../../api/github-sls-rest-api';
 import inquirer from 'inquirer';
 import { ui } from '../command';
 import { ConfigHelper } from './configHelper';
 import { GenericHelper } from './genericHelper';
+import { STS } from '@aws-sdk/client-sts';
 
 export class AwsHelper {
   configHelper: ConfigHelper;
@@ -148,5 +151,30 @@ export class AwsHelper {
 
 ${githubLogins.map((l) => `- ${l}`)}`,
     );
+  }
+
+  async assumeAws(samlResponse: GithubSlsRestApiSamlResponseContainer): Promise<void> {
+    const sts = new STS({});
+    const opts = samlResponse.sdkOptions as GithubSlsRestApiAwsAssumeSdkOptions;
+    if (!opts) {
+      throw new Error('Missing sdk options from saml response');
+    }
+    const response = await sts.assumeRoleWithSAML({
+      ...opts,
+      SAMLAssertion: samlResponse.samlResponse,
+    });
+    if (
+      !response.Credentials ||
+      !response.Credentials.AccessKeyId ||
+      !response.Credentials.SecretAccessKey ||
+      !response.Credentials.SessionToken
+    ) {
+      throw new Error('Missing credentials');
+    }
+    this.genericHelper.outputEnv({
+      AWS_ACCESS_KEY_ID: response.Credentials.AccessKeyId,
+      AWS_SECRET_ACCESS_KEY: response.Credentials.SecretAccessKey,
+      AWS_SESSION_TOKEN: response.Credentials.SessionToken,
+    });
   }
 }

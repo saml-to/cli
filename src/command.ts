@@ -1,8 +1,4 @@
-/* eslint-disable no-console */
-// import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-// import log from 'loglevel';
-
 import yargs from 'yargs';
 import axios from 'axios';
 import { UNSUPPORTED_REPO_URL } from './messages';
@@ -13,13 +9,6 @@ import inquirer from 'inquirer';
 import { NoTokenError } from './stores/scms';
 import { GithubLogin } from './commands/github-login';
 import { Add, AddSubcommands } from './commands/add';
-// import log from 'loglevel';
-
-// log.setDefaultLevel('DEBUG');
-
-process.on('SIGINT', () => {
-  process.exit(0);
-});
 
 const loginWrapper = async (scope: string, fn: () => Promise<void>): Promise<void> => {
   try {
@@ -68,6 +57,19 @@ export class Command {
           if (!handled) {
             throw new Error(UNSUPPORTED_REPO_URL);
           }
+          ui.updateBottomBar('');
+          console.log(`
+Next, you will want to configure a service provider for saml.to.
+
+The service provider will need your SAML Metadata or Certificicate, available with the following commands:
+ - \`${this.name} show metadata\`
+ - \`${this.name} show certificate\`
+
+More information on Provider configuration can be found here: https://docs.saml.to/configuration/service-providers
+
+Once a service provider is configured, you can then run:
+\`${this.name} add provider\`
+`);
         },
         builder: {
           scm: {
@@ -83,6 +85,39 @@ export class Command {
             demand: false,
             type: 'boolean',
             default: false,
+          },
+        },
+      })
+      .command({
+        command: 'add [subcommand]',
+        describe: 'Add providers or permissions to the configuration',
+        handler: async ({ subcommand }) => {
+          await loginWrapper('repo', () => this.add.handle(subcommand as AddSubcommands));
+          if ((subcommand as AddSubcommands) === 'provider') {
+            console.log(`
+Next, you may add permissions by running:
+\`${this.name} add permission\`
+
+Additional providers can be added by running \`${this.name} add provider\` again.
+            `);
+          }
+          if ((subcommand as AddSubcommands) === 'permission') {
+            console.log(`
+Finally, the users that were provided can login or assume roles:
+ - \`${this.name} login\`
+ - \`${this.name} assume\`
+
+Or, you can direct them to visit: https://saml.to/sso
+
+Additional permissions can be added by running \`${this.name} add permission\` again.
+            `);
+          }
+        },
+        builder: {
+          subcommand: {
+            demand: true,
+            type: 'string',
+            choices: ['provider', 'permission'] as string[],
           },
         },
       })
@@ -163,19 +198,6 @@ export class Command {
             demand: false,
             type: 'string',
             description: 'Specify the provider',
-          },
-        },
-      })
-      .command({
-        command: 'add [subcommand]',
-        describe: 'Add providers or permissions to the configuration',
-        handler: async ({ subcommand }) =>
-          loginWrapper('repo', () => this.add.handle(subcommand as AddSubcommands)),
-        builder: {
-          subcommand: {
-            demand: true,
-            type: 'string',
-            choices: ['provider', 'permission'] as string[],
           },
         },
       })

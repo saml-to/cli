@@ -23,4 +23,27 @@ export class GenericHelper {
 
     return this.promptUsers(provider, role, users);
   }
+
+  outputEnv(
+    vars: { [key: string]: string },
+    platform: NodeJS.Platform | 'github' = process.platform,
+  ): void {
+    let prefix = 'export';
+    let separator = '=';
+    switch (platform) {
+      case 'win32':
+        prefix = 'setx';
+        break;
+      case 'github':
+        prefix = '::set-output';
+        separator = '::';
+        break;
+      default:
+        break;
+    }
+
+    Object.entries(vars).forEach(([key, value]) => {
+      console.log(`${prefix} ${key}${separator}"${value}"`);
+    });
+  }
 }

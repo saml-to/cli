@@ -4,12 +4,26 @@ import { NO_GITHUB_CLIENT } from '../messages';
 import { Scms } from '../stores/scms';
 import { ui } from '../command';
 import { CONFIG_FILE } from '../commands/github-init';
+import { IDPApi, Configuration } from '../../api/github-sls-rest-api';
 
 export class ConfigHelper {
   scms: Scms;
 
   constructor() {
     this.scms = new Scms();
+  }
+
+  public async fetchConfigYaml(org: string, raw = false): Promise<string> {
+    ui.updateBottomBar('Fetching config...');
+    const accessToken = this.scms.getGithubToken();
+    const idpApi = new IDPApi(
+      new Configuration({
+        accessToken: accessToken,
+      }),
+    );
+    const { data: result } = await idpApi.getOrgConfig(org, raw);
+    return `---
+${dump(result)}`;
   }
 
   public async promptConfigUpdate(

@@ -3,6 +3,10 @@
 import log from 'loglevel';
 import { Command } from '../src/command';
 
+process.on('SIGINT', () => {
+  process.exit(0);
+});
+
 (async () => {
   try {
     log.debug('Starting CLI');
@@ -10,7 +14,6 @@ import { Command } from '../src/command';
     await command.run(process.argv);
   } catch (e) {
     if (e instanceof Error) {
-      // eslint-disable-next-line no-console
       console.error(`Error: ${e.message}`, e);
       process.exit(-1);
     }

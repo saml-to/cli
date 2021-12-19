@@ -1,5 +1,4 @@
 import {
-  GithubSlsRestApiOrgRepoResponse,
   GithubSlsRestApiConfigV20211212,
   GithubSlsRestApiProviderV1,
 } from '../../api/github-sls-rest-api';
@@ -9,6 +8,8 @@ import { Show } from './show';
 import { load } from 'js-yaml';
 import { AwsHelper } from '../helpers/awsHelper';
 import { CONFIG_FILE } from './github-init';
+import { ConfigHelper } from '../helpers/configHelper';
+import { OrgHelper } from '../helpers/orgHelper';
 
 export type AddSubcommands = 'provider' | 'permission';
 
@@ -17,9 +18,15 @@ export class Add {
 
   awsHelper: AwsHelper;
 
+  configHelper: ConfigHelper;
+
+  orgHelper: OrgHelper;
+
   constructor() {
     this.show = new Show();
     this.awsHelper = new AwsHelper();
+    this.configHelper = new ConfigHelper();
+    this.orgHelper = new OrgHelper();
   }
 
   public async handle(subcommand: AddSubcommands): Promise<void> {
@@ -36,11 +43,11 @@ export class Add {
   }
 
   private async addProvider(): Promise<void> {
-    const { org, repo } = await this.promptOrg();
+    const { org, repo } = await this.orgHelper.promptOrg('manage');
 
     ui.updateBottomBar('Fetching config...');
 
-    const configYaml = await this.show.fetchConfigYaml(org, true);
+    const configYaml = await this.configHelper.fetchConfigYaml(org, true);
 
     const config = load(configYaml) as { version: string };
 
@@ -64,19 +71,23 @@ export class Add {
 
     switch (type) {
       case 'aws': {
-        return this.awsHelper.promptProvider(org, repo, config);
+        await this.awsHelper.promptProvider(org, repo, config);
+        break;
       }
       default:
         throw new Error(`Unknown type: ${type}`);
     }
+
+    await this.configHelper.fetchConfigYaml(org);
+
+    ui.updateBottomBar('');
+    console.log('Configuration is valid!');
   }
 
   private async addPermission(): Promise<void> {
-    const { org, repo } = await this.promptOrg();
+    const { org, repo } = await this.orgHelper.promptOrg('log in');
 
-    ui.updateBottomBar('Fetching config...');
-
-    const configYaml = await this.show.fetchConfigYaml(org, true);
+    const configYaml = await this.configHelper.fetchConfigYaml(org, true);
 
     const config = load(configYaml) as { version: string };
 
@@ -85,11 +96,18 @@ export class Add {
     }
 
     switch (config.version) {
-      case '20211212':
-        return this.addPermissionV20211212(org, repo, config as GithubSlsRestApiConfigV20211212);
+      case '20211212': {
+        await this.addPermissionV20211212(org, repo, config as GithubSlsRestApiConfigV20211212);
+        break;
+      }
       default:
         throw new Error(`Invalid config version: ${config.version}`);
     }
+
+    await this.configHelper.fetchConfigYaml(org);
+
+    ui.updateBottomBar('');
+    console.log('Configuration is valid!');
   }
 
   private async addPermissionV20211212(
@@ -126,28 +144,5 @@ Please add permissions by manually editing the configuration file \`${CONFIG_FIL
 
 The configuration file reference can be found here: https://docs.saml.to/configuration/reference
 `);
-  }
-
-  private async promptOrg(): Promise<GithubSlsRestApiOrgRepoResponse> {
-    const orgs = await this.show.fetchOrgs();
-    if (!orgs.length) {
-      throw new Error(`Please run the \`init\` command first`);
-    }
-
-    if (orgs.length === 1) {
-      return orgs[0];
-    }
-
-    ui.updateBottomBar('');
-    const { orgIx } = await inquirer.prompt({
-      type: 'list',
-      name: 'orgIx',
-      message: `Which organization would you like to manage?`,
-      choices: orgs.map((o, ix) => {
-        return { name: `${o.org} (${o.repo})`, value: ix };
-      }),
-    });
-
-    return orgs[orgIx];
   }
 }

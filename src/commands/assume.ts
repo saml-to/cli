@@ -2,7 +2,6 @@ import {
   IDPApi,
   Configuration,
   GithubSlsRestApiSamlResponseContainer,
-  GithubSlsRestApiAwsAssumeSdkOptions,
 } from '../../api/github-sls-rest-api';
 import {
   ERROR_ASSUMING_ROLE,
@@ -12,21 +11,24 @@ import {
 } from '../messages';
 import { Scms } from '../stores/scms';
 import axios from 'axios';
-import { STS } from '@aws-sdk/client-sts';
 import log from 'loglevel';
 import open from 'open';
 import { Show } from './show';
 import inquirer from 'inquirer';
 import { ui } from '../command';
+import { AwsHelper } from '../helpers/awsHelper';
 
 export class Assume {
   scms: Scms;
 
   show: Show;
 
+  awsHelper: AwsHelper;
+
   constructor() {
     this.scms = new Scms();
     this.show = new Show();
+    this.awsHelper = new AwsHelper();
   }
 
   async list(org?: string, refresh?: boolean): Promise<void> {
@@ -111,54 +113,10 @@ export class Assume {
   }
 
   private async assumeTerminal(samlResponse: GithubSlsRestApiSamlResponseContainer): Promise<void> {
-    switch (samlResponse.recipient) {
-      case 'https://signin.aws.amazon.com/saml':
-        await this.assumeAws(samlResponse);
-        break;
-      default:
-        throw new Error(TERMINAL_NOT_SUPPORTED(samlResponse.provider, samlResponse.recipient));
-    }
-  }
-
-  private async assumeAws(samlResponse: GithubSlsRestApiSamlResponseContainer): Promise<void> {
-    log.debug(`Assuming AWS role ${samlResponse.role}`);
-    const sts = new STS({});
-    const opts = samlResponse.sdkOptions as GithubSlsRestApiAwsAssumeSdkOptions;
-    if (!opts) {
-      throw new Error('Missing sdk options from saml response');
-    }
-    const response = await sts.assumeRoleWithSAML({
-      ...opts,
-      SAMLAssertion: samlResponse.samlResponse,
-    });
-    if (
-      !response.Credentials ||
-      !response.Credentials.AccessKeyId ||
-      !response.Credentials.SecretAccessKey ||
-      !response.Credentials.SessionToken
-    ) {
-      throw new Error('Missing credentials');
-    }
-    this.outputEnv({
-      AWS_ACCESS_KEY_ID: response.Credentials.AccessKeyId,
-      AWS_SECRET_ACCESS_KEY: response.Credentials.SecretAccessKey,
-      AWS_SESSION_TOKEN: response.Credentials.SessionToken,
-    });
-  }
-
-  private outputEnv(vars: { [key: string]: string }): void {
-    const { platform } = process;
-    let prefix = 'export';
-    switch (platform) {
-      case 'win32':
-        prefix = 'setx';
-        break;
-      default:
-        break;
+    if (samlResponse.recipient.endsWith('.amazon.com/saml')) {
+      return this.awsHelper.assumeAws(samlResponse);
     }
 
-    Object.entries(vars).forEach(([key, value]) => {
-      console.log(`${prefix} ${key}="${value}"`);
-    });
+    throw new Error(TERMINAL_NOT_SUPPORTED(samlResponse.provider, samlResponse.recipient));
   }
 }
