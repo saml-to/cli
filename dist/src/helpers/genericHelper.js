@@ -19,6 +19,24 @@ class GenericHelper {
         users.push(user);
         return this.promptUsers(provider, role, users);
     }
+    outputEnv(vars, platform = process.platform) {
+        let prefix = 'export';
+        let separator = '=';
+        switch (platform) {
+            case 'win32':
+                prefix = 'setx';
+                break;
+            case 'github':
+                prefix = '::set-output';
+                separator = '::';
+                break;
+            default:
+                break;
+        }
+        Object.entries(vars).forEach(([key, value]) => {
+            console.log(`${prefix} ${key}${separator}"${value}"`);
+        });
+    }
 }
 exports.GenericHelper = GenericHelper;
 //# sourceMappingURL=genericHelper.js.map

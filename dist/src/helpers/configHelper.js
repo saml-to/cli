@@ -10,10 +10,21 @@ const messages_1 = require("../messages");
 const scms_1 = require("../stores/scms");
 const command_1 = require("../command");
 const github_init_1 = require("../commands/github-init");
+const github_sls_rest_api_1 = require("../../api/github-sls-rest-api");
 class ConfigHelper {
     scms;
     constructor() {
         this.scms = new scms_1.Scms();
+    }
+    async fetchConfigYaml(org, raw = false) {
+        command_1.ui.updateBottomBar('Fetching config...');
+        const accessToken = this.scms.getGithubToken();
+        const idpApi = new github_sls_rest_api_1.IDPApi(new github_sls_rest_api_1.Configuration({
+            accessToken: accessToken,
+        }));
+        const { data: result } = await idpApi.getOrgConfig(org, raw);
+        return `---
+${(0, js_yaml_1.dump)(result)}`;
     }
     async promptConfigUpdate(org, repo, 
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types,@typescript-eslint/no-explicit-any

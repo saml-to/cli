@@ -10,12 +10,18 @@ const show_1 = require("./show");
 const js_yaml_1 = require("js-yaml");
 const awsHelper_1 = require("../helpers/awsHelper");
 const github_init_1 = require("./github-init");
+const configHelper_1 = require("../helpers/configHelper");
+const orgHelper_1 = require("../helpers/orgHelper");
 class Add {
     show;
     awsHelper;
+    configHelper;
+    orgHelper;
     constructor() {
         this.show = new show_1.Show();
         this.awsHelper = new awsHelper_1.AwsHelper();
+        this.configHelper = new configHelper_1.ConfigHelper();
+        this.orgHelper = new orgHelper_1.OrgHelper();
     }
     async handle(subcommand) {
         switch (subcommand) {
@@ -30,9 +36,9 @@ class Add {
         }
     }
     async addProvider() {
-        const { org, repo } = await this.promptOrg();
+        const { org, repo } = await this.orgHelper.promptOrg('manage');
         command_1.ui.updateBottomBar('Fetching config...');
-        const configYaml = await this.show.fetchConfigYaml(org, true);
+        const configYaml = await this.configHelper.fetchConfigYaml(org, true);
         const config = (0, js_yaml_1.load)(configYaml);
         if (!config.version) {
             throw new Error(`Missing version in config`);
@@ -52,26 +58,34 @@ class Add {
         });
         switch (type) {
             case 'aws': {
-                return this.awsHelper.promptProvider(org, repo, config);
+                await this.awsHelper.promptProvider(org, repo, config);
+                break;
             }
             default:
                 throw new Error(`Unknown type: ${type}`);
         }
+        await this.configHelper.fetchConfigYaml(org);
+        command_1.ui.updateBottomBar('');
+        console.log('Configuration is valid!');
     }
     async addPermission() {
-        const { org, repo } = await this.promptOrg();
-        command_1.ui.updateBottomBar('Fetching config...');
-        const configYaml = await this.show.fetchConfigYaml(org, true);
+        const { org, repo } = await this.orgHelper.promptOrg('log in');
+        const configYaml = await this.configHelper.fetchConfigYaml(org, true);
         const config = (0, js_yaml_1.load)(configYaml);
         if (!config.version) {
             throw new Error(`Missing version in config`);
         }
         switch (config.version) {
-            case '20211212':
-                return this.addPermissionV20211212(org, repo, config);
+            case '20211212': {
+                await this.addPermissionV20211212(org, repo, config);
+                break;
+            }
             default:
                 throw new Error(`Invalid config version: ${config.version}`);
         }
+        await this.configHelper.fetchConfigYaml(org);
+        command_1.ui.updateBottomBar('');
+        console.log('Configuration is valid!');
     }
     async addPermissionV20211212(org, repo, config) {
         if (!config.providers || !Object.keys(config.providers).length) {
@@ -96,25 +110,6 @@ Please add permissions by manually editing the configuration file \`${github_ini
 
 The configuration file reference can be found here: https://docs.saml.to/configuration/reference
 `);
-    }
-    async promptOrg() {
-        const orgs = await this.show.fetchOrgs();
-        if (!orgs.length) {
-            throw new Error(`Please run the \`init\` command first`);
-        }
-        if (orgs.length === 1) {
-            return orgs[0];
-        }
-        command_1.ui.updateBottomBar('');
-        const { orgIx } = await inquirer_1.default.prompt({
-            type: 'list',
-            name: 'orgIx',
-            message: `Which organization would you like to manage?`,
-            choices: orgs.map((o, ix) => {
-                return { name: `${o.org} (${o.repo})`, value: ix };
-            }),
-        });
-        return orgs[orgIx];
     }
 }
 exports.Add = Add;
