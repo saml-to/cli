@@ -4,11 +4,11 @@ import {
   GithubSlsRestApiProviderV1,
   GithubSlsRestApiSamlResponseContainer,
   GithubSlsRestApiAwsAssumeSdkOptions,
-} from '../../api/github-sls-rest-api';
+} from '../../../api/github-sls-rest-api';
 import inquirer from 'inquirer';
-import { ui } from '../command';
-import { ConfigHelper } from './configHelper';
-import { GenericHelper } from './genericHelper';
+import { ui } from '../../command';
+import { ConfigHelper } from '../configHelper';
+import { GenericHelper } from '../genericHelper';
 import { STS } from '@aws-sdk/client-sts';
 
 export class AwsHelper {

@@ -16,7 +16,7 @@ import open from 'open';
 import { Show } from './show';
 import inquirer from 'inquirer';
 import { ui } from '../command';
-import { AwsHelper } from '../helpers/awsHelper';
+import { AwsHelper } from '../helpers/aws/awsHelper';
 
 export class Assume {
   scms: Scms;

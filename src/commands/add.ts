@@ -6,11 +6,12 @@ import inquirer from 'inquirer';
 import { ui } from '../command';
 import { Show } from './show';
 import { load } from 'js-yaml';
-import { AwsHelper } from '../helpers/awsHelper';
+import { AwsHelper } from '../helpers/aws/awsHelper';
 import { CONFIG_FILE } from './init';
 import { ConfigHelper } from '../helpers/configHelper';
 import { OrgHelper } from '../helpers/orgHelper';
 import { GenericHelper } from '../helpers/genericHelper';
+import { AwsSsoHelper } from '../helpers/aws/awsSsoHelper';
 
 export type AddSubcommands = 'provider' | 'permission';
 
@@ -18,6 +19,8 @@ export class Add {
   show: Show;
 
   awsHelper: AwsHelper;
+
+  awsSsoHelper: AwsSsoHelper;
 
   configHelper: ConfigHelper;
 
@@ -28,6 +31,7 @@ export class Add {
   constructor() {
     this.show = new Show();
     this.awsHelper = new AwsHelper();
+    this.awsSsoHelper = new AwsSsoHelper();
     this.configHelper = new ConfigHelper();
     this.orgHelper = new OrgHelper();
     this.genericHelper = new GenericHelper();
@@ -87,6 +91,10 @@ Permissions have been granted!`);
           name: 'AWS (Federated)',
           value: 'aws',
         },
+        {
+          name: 'AWS (SSO)',
+          value: 'aws-sso',
+        },
         { name: 'Other', value: 'other' },
       ],
     });
@@ -95,6 +103,10 @@ Permissions have been granted!`);
     switch (type) {
       case 'aws': {
         added = await this.awsHelper.promptProvider(org, repo, config);
+        break;
+      }
+      case 'aws-sso': {
+        added = await this.awsSsoHelper.promptProvider(org, repo, config);
         break;
       }
       case 'other': {
