@@ -2,7 +2,7 @@ export declare const ui: import("inquirer/lib/ui/bottom-bar");
 export declare class Command {
     private name;
     private assume;
-    private githubInit;
+    private init;
     private show;
     private add;
     constructor(name: string);

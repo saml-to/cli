@@ -1,10 +1,11 @@
 import { JwtGithubApi } from '../../api/auth-sls-rest-api';
 import axios from 'axios';
 import moment from 'moment';
-import { Scms } from '../stores/scms';
+import { NoTokenError, Scms } from '../stores/scms';
 import log from 'loglevel';
 import { GITHUB_SCOPE_NEEDED } from '../messages';
 import { ui } from '../command';
+import { Octokit } from '@octokit/rest';
 
 type DeviceCodeRequest = {
   client_id: string;
@@ -33,14 +34,14 @@ export type AccessTokenResponse = {
   scope: string;
 };
 
-export class GithubLogin {
+export class GithubHelper {
   scms: Scms;
 
   constructor() {
     this.scms = new Scms();
   }
 
-  async handle(scope = 'user:email'): Promise<void> {
+  async promptLogin(scope = 'user:email', org?: string): Promise<void> {
     const api = new JwtGithubApi();
     const { data: oauthDetail } = await api.getOauthDetail();
     const { clientId } = oauthDetail;
@@ -57,14 +58,34 @@ export class GithubLogin {
     const { verification_uri: verificationUri, user_code: userCode } = response.data;
 
     ui.updateBottomBar('');
-    console.log(`Please open the browser to ${verificationUri}, and enter the code:`);
-    console.log(`\n${userCode}\n`);
+    console.log(`
+To continue, access to your GitHub profile (with scope \`${scope}\`) is needed...
+
+Please open the browser to ${verificationUri}, and enter the code:
+
+${userCode}
+`);
 
     const accessTokenResponse = await this.getAccessToken(
       clientId,
       response.data,
       moment().add(response.data.expires_in, 'second'),
     );
+
+    const octokit = new Octokit({ auth: accessTokenResponse.access_token });
+
+    const { data: user } = await octokit.users.getAuthenticated();
+
+    if (org && user.login !== org) {
+      const orgs = await octokit.paginate(octokit.orgs.listForAuthenticatedUser);
+
+      const found = orgs.find((o) => o.login === org);
+      if (!found) {
+        ui.updateBottomBar('');
+        console.warn(`It appears access to ${org} has not beeen granted, let's try again...`);
+        return this.promptLogin(scope, org);
+      }
+    }
 
     const location = this.scms.saveGithubToken(accessTokenResponse.access_token);
     console.log(`Saved GitHub credentials to ${location}`);
@@ -113,13 +134,23 @@ export class GithubLogin {
     });
   }
 
-  public async assertScope(scope: string): Promise<void> {
+  public async assertScope(scope: string, org?: string): Promise<void> {
     ui.updateBottomBar('Checking scopes...');
 
-    const { github } = await this.scms.loadClients();
+    let github: Octokit | undefined;
+    try {
+      const clients = await this.scms.loadClients();
+      github = clients.github;
+    } catch (e) {
+      if (e instanceof NoTokenError) {
+        await this.promptLogin(scope, org);
+        return this.assertScope(scope, org);
+      }
+      throw e;
+    }
+
     if (!github) {
-      await this.handle(scope);
-      return this.assertScope(scope);
+      throw new Error(`Unable to load GitHub client`);
     }
 
     const { headers } = await github.users.getAuthenticated();
@@ -131,8 +162,8 @@ export class GithubLogin {
         log.debug(e.message);
         ui.updateBottomBar('');
         console.log(GITHUB_SCOPE_NEEDED(scope));
-        await this.handle(scope);
-        return this.assertScope(scope);
+        await this.promptLogin(scope, org);
+        return this.assertScope(scope, org);
       }
       throw e;
     }

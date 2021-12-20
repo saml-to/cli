@@ -56,7 +56,15 @@ class AwsHelper {
         };
         config.variables = { ...(config.variables || {}), ...newVariables };
         config.providers = { ...(config.providers || {}), ...newProvider };
-        return this.configHelper.promptConfigUpdate(org, repo, config, `add aws provider`);
+        const { addPermissions } = await inquirer_1.default.prompt({
+            type: 'confirm',
+            name: 'addPermissions',
+            message: `Would you like to grant any permissions to GitHub users now?`,
+        });
+        if (!addPermissions) {
+            return this.configHelper.promptConfigUpdate(org, repo, config, `aws: add provider`);
+        }
+        return this.promptPermissionV20211212(org, repo, config);
     }
     async promptPermissionV20211212(org, repo, config) {
         config.permissions = config.permissions || {};
@@ -110,7 +118,7 @@ class AwsHelper {
                 };
             }
         }
-        return this.configHelper.promptConfigUpdate(org, repo, config, `grant aws permissions to role ${roleArn}
+        return this.configHelper.promptConfigUpdate(org, repo, config, `aws: grant permissions to role ${roleArn}
 
 ${githubLogins.map((l) => `- ${l}`)}`);
     }

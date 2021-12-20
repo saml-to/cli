@@ -9,7 +9,7 @@ const js_yaml_1 = require("js-yaml");
 const messages_1 = require("../messages");
 const scms_1 = require("../stores/scms");
 const command_1 = require("../command");
-const github_init_1 = require("../commands/github-init");
+const init_1 = require("../commands/init");
 const github_sls_rest_api_1 = require("../../api/github-sls-rest-api");
 class ConfigHelper {
     scms;
@@ -35,7 +35,7 @@ ${(0, js_yaml_1.dump)(result)}`;
 # Config Reference: 
 # https://docs.saml.to/configuration/reference
 ${(0, js_yaml_1.dump)(config, { lineWidth: 1024 })}`;
-        console.log(`Here is the updated \`${github_init_1.CONFIG_FILE}\` for ${org}/${repo}:
+        console.log(`Here is the updated \`${init_1.CONFIG_FILE}\` for ${org}/${repo}:
 
 ${configYaml}
 
@@ -49,7 +49,7 @@ ${configYaml}
             choices: [
                 {
                     name: 'Do not change anything',
-                    value: '',
+                    value: 'nothing',
                 },
                 {
                     name: `Commit directly to \`${org}/${repo}\``,
@@ -57,15 +57,18 @@ ${configYaml}
                 },
             ],
         });
-        if (type === 'commit') {
-            return this.commitConfig(org, repo, configYaml, title);
+        if (type === 'nothing') {
+            command_1.ui.updateBottomBar('');
+            console.log('All done. No changes were made.');
+            return false;
         }
-        command_1.ui.updateBottomBar('');
-        console.log('All done. No changes were made.');
-        return;
+        if (type === 'commit') {
+            await this.commitConfig(org, repo, configYaml, title);
+        }
+        return true;
     }
     async commitConfig(org, repo, configYaml, title) {
-        command_1.ui.updateBottomBar(`Updating ${github_init_1.CONFIG_FILE} on ${org}/${repo}`);
+        command_1.ui.updateBottomBar(`Updating ${init_1.CONFIG_FILE} on ${org}/${repo}`);
         const { github } = await this.scms.loadClients();
         if (!github) {
             throw new Error(messages_1.NO_GITHUB_CLIENT);
@@ -75,7 +78,7 @@ ${configYaml}
             const response = await github.repos.getContent({
                 owner: org,
                 repo,
-                path: github_init_1.CONFIG_FILE,
+                path: init_1.CONFIG_FILE,
             });
             if (response.data && 'content' in response.data) {
                 sha = response.data.sha;
@@ -87,13 +90,13 @@ ${configYaml}
         const { data: update } = await github.repos.createOrUpdateFileContents({
             owner: org,
             repo,
-            path: github_init_1.CONFIG_FILE,
+            path: init_1.CONFIG_FILE,
             message: title,
             content: Buffer.from(configYaml, 'utf8').toString('base64'),
             sha,
         });
         command_1.ui.updateBottomBar('');
-        console.log(`Updated \`${github_init_1.CONFIG_FILE}\` on \`${org}/${repo}\` (SHA: ${update.commit.sha})`);
+        console.log(`Updated \`${init_1.CONFIG_FILE}\` on \`${org}/${repo}\` (SHA: ${update.commit.sha})`);
     }
 }
 exports.ConfigHelper = ConfigHelper;

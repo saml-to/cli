@@ -3,7 +3,7 @@ import { dump } from 'js-yaml';
 import { NO_GITHUB_CLIENT } from '../messages';
 import { Scms } from '../stores/scms';
 import { ui } from '../command';
-import { CONFIG_FILE } from '../commands/github-init';
+import { CONFIG_FILE } from '../commands/init';
 import { IDPApi, Configuration } from '../../api/github-sls-rest-api';
 
 export class ConfigHelper {

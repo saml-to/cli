@@ -1,8 +1,8 @@
 // import { RequestError } from '@octokit/request-error';
 // import { RequestError } from '@octokit/request-error';
 import log from 'loglevel';
-import { GITHUB_ACCESS_NEEDED, NO_GITHUB_CLIENT, REPO_DOES_NOT_EXIST } from '../messages';
-import { GithubLogin } from './github-login';
+import { GITHUB_ACCESS_NEEDED, REPO_DOES_NOT_EXIST } from '../messages';
+import { GithubHelper } from '../helpers/githubHelper';
 import inquirer from 'inquirer';
 import {
   IDPApi,
@@ -15,9 +15,9 @@ import { Show } from './show';
 import { ui } from '../command';
 import { RequestError } from '@octokit/request-error';
 import { dump } from 'js-yaml';
+import { Octokit } from '@octokit/rest';
 
 export const CONFIG_FILE = 'saml-to.yml';
-const REPO_REGEX = /^.*github\.com[:/]+(?<org>.*)\/(?<repo>.*?)(.git)*$/gm;
 
 const EMPTY_CONFIG: GithubSlsRestApiConfigV20211212 = {
   version: GithubSlsRestApiConfigV20211212VersionEnum._20211212,
@@ -26,62 +26,54 @@ const EMPTY_CONFIG: GithubSlsRestApiConfigV20211212 = {
   permissions: {},
 };
 
-// type ExampleConfig = {
-//   name: string;
-//   downloadUrl: string;
-//   viewUrl?: string;
-// };
-
-// class NotFoundError extends Error {}
-
-const isGithubRepo = (repoUrl: string): { org?: string; repo?: string } => {
-  const match = REPO_REGEX.exec(repoUrl);
-  if (!match || !match.groups) {
-    return {};
-  }
-
-  return {
-    org: match.groups.org,
-    repo: match.groups.repo,
-  };
-};
-
-export class GithubInit {
-  githubLogin: GithubLogin;
+export class Init {
+  githubHelper: GithubHelper;
 
   scms: Scms;
 
   show: Show;
 
   constructor() {
-    this.githubLogin = new GithubLogin();
+    this.githubHelper = new GithubHelper();
     this.scms = new Scms();
     this.show = new Show();
   }
 
-  async handle(scm: string, repoUrl?: string, force = false): Promise<boolean> {
-    if (scm !== 'github') {
-      return false;
-    }
+  async handle(force = false): Promise<void> {
+    ui.updateBottomBar('');
+    console.log(`Welcome to SAML.to!
 
-    if (!repoUrl) {
-      const { repoInput } = await inquirer.prompt({
-        type: 'input',
-        name: 'repoInput',
-        message: `What is the full URL of the repository that will store the \`${CONFIG_FILE}\` configuration file?
-(e.g. https://github.com/MyOrg/saml-to)
+SAML.to enables administrators to grant access to Service Providers to GitHub users.
+
+This utility will assist you in connecting a new or existing repository of your choice for configuration.
+
+SAML.to is configured by adding a \`${CONFIG_FILE}\` to any GitHub organization and repository which defines providers and access privleges.
+
+Once configured, you (or users in your organzation) will be able to login to services (and assume roles, if supported) using this utility or from the web.
+
+For more information, check out https://docs.saml.to
+`);
+
+    ui.updateBottomBar('');
+    const { org } = await inquirer.prompt({
+      type: 'input',
+      name: 'org',
+      message: `Which GitHub User or Organiztion would you like to use?
 `,
-      });
+    });
 
-      repoUrl = repoInput as string;
-    }
+    ui.updateBottomBar(`Checking if ${org} exists...`);
+    await this.assertOrg(org);
 
-    const { org, repo } = isGithubRepo(repoUrl);
-    if (!org || !repo) {
-      log.debug('Not a github repo', repoUrl);
-      return false;
-    }
-
+    ui.updateBottomBar('');
+    const { repo } = await inquirer.prompt({
+      type: 'input',
+      name: 'repo',
+      default: 'saml-to',
+      message: `Which Repository within ${org} would you like to use to store the \`${CONFIG_FILE}\` configuration file?
+(If it doesn't yet exist, we'll give you an option to create it!)
+`,
+    });
     ui.updateBottomBar(`Checking access to ${org}/${repo}...`);
     await this.assertRepo(org, repo, 'repo');
     ui.updateBottomBar(`Registering ${org}/${repo}...`);
@@ -92,36 +84,38 @@ export class GithubInit {
     this.scms.saveGithubOrg(org);
 
     ui.updateBottomBar('');
-    console.log(`Repository ${org}/${repo} registered!`);
-
-    // try {
-    //   ui.updateBottomBar(`Checking for ${CONFIG_FILE} in ${org}/${repo}...`);
-    //   await this.assertConfig(org, repo, CONFIG_FILE);
-    // } catch (e) {
-    //   if (e instanceof NotFoundError) {
-    //     ui.updateBottomBar('');
-    //     throw new Error(
-    //       `${CONFIG_FILE} not found in ${org}/${repo}.\n\nComplete the setup instructions at https://saml.to, and then re-run this command.`,
-    //     );
-    //   }
-    // }
-
-    // ui.updateBottomBar(`Fetching and checking config...`);
-    // await this.show.fetchConfig(org);
-
-    // ui.updateBottomBar('');
-    // inquirer.restoreDefaultPrompts();
-    // console.log(`Configuration is valid!`);
-
-    return true;
+    console.log(`Repository \`${org}/${repo}\` registered!`);
   }
 
-  public async assertRepo(org: string, repo: string, scope: string): Promise<void> {
-    await this.githubLogin.assertScope(scope);
+  private async assertOrg(org: string): Promise<'User' | 'Organization'> {
+    const octokit = new Octokit();
+
+    try {
+      const { data: user } = await octokit.users.getByUsername({ username: org });
+      if (user.type === 'User') {
+        return 'User';
+      }
+      if (user.type === 'Organization') {
+        return 'Organization';
+      }
+      throw new Error(
+        `Unknown user type for \`${org}\`: ${user.type}, must be 'User' or 'Organization'`,
+      );
+    } catch (e) {
+      if (e instanceof RequestError && e.status === 404) {
+        throw new Error(`Unable to find user or organization: ${org}`);
+      }
+      throw e;
+    }
+  }
+
+  private async assertRepo(org: string, repo: string, scope: string): Promise<void> {
+    await this.githubHelper.assertScope(scope, org);
 
     const { github } = await this.scms.loadClients();
     if (!github) {
-      throw new Error(NO_GITHUB_CLIENT);
+      await this.githubHelper.promptLogin(scope);
+      return this.assertRepo(org, repo, scope);
     }
 
     const { data: user } = await github.users.getAuthenticated();
@@ -134,7 +128,7 @@ export class GithubInit {
         if (e instanceof Error) {
           ui.updateBottomBar('');
           console.log(GITHUB_ACCESS_NEEDED(org, scope));
-          await this.githubLogin.handle('repo');
+          await this.githubHelper.promptLogin('repo', org);
           return this.assertRepo(org, repo, scope);
         }
       }
@@ -148,7 +142,7 @@ export class GithubInit {
         const { makePrivate } = await inquirer.prompt({
           type: 'confirm',
           name: 'makePrivate',
-          message: `It's recommended to keep ${org}/${repo} as a private repository, would you like to convert it to a private repository?`,
+          message: `\`${org}/${repo}\` appears to be a Public Repository. It's recommended to keep it private. Would you like to convert it to a private repository?`,
         });
         if (makePrivate) {
           await github.repos.update({ owner: org, repo, visibility: 'private' });

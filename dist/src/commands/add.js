@@ -9,27 +9,48 @@ const command_1 = require("../command");
 const show_1 = require("./show");
 const js_yaml_1 = require("js-yaml");
 const awsHelper_1 = require("../helpers/awsHelper");
-const github_init_1 = require("./github-init");
+const init_1 = require("./init");
 const configHelper_1 = require("../helpers/configHelper");
 const orgHelper_1 = require("../helpers/orgHelper");
+const genericHelper_1 = require("../helpers/genericHelper");
 class Add {
     show;
     awsHelper;
     configHelper;
     orgHelper;
+    genericHelper;
     constructor() {
         this.show = new show_1.Show();
         this.awsHelper = new awsHelper_1.AwsHelper();
         this.configHelper = new configHelper_1.ConfigHelper();
         this.orgHelper = new orgHelper_1.OrgHelper();
+        this.genericHelper = new genericHelper_1.GenericHelper();
     }
     async handle(subcommand) {
         switch (subcommand) {
             case 'provider': {
-                return this.addProvider();
+                const added = await this.addProvider();
+                if (added) {
+                    console.log(`
+Provider has been registered!
+
+Need to add another provider? Run the \`add provider\` command again!
+
+Permissions can be continually added by running the \`add permission\` command.
+
+Once permissions are added, users can login or assume roles using the following commands:
+ - \`saml-to login\`
+ - \`saml-to assume\``);
+                }
+                break;
             }
             case 'permission': {
-                return this.addPermission();
+                const added = await this.addPermission();
+                if (added) {
+                    console.log(`
+Permissions have been granted!`);
+                }
+                break;
             }
             default:
                 throw new Error(`Unknown subcommand: ${subcommand}`);
@@ -47,7 +68,7 @@ class Add {
         const { type } = await inquirer_1.default.prompt({
             type: 'list',
             name: 'type',
-            message: `What service would you like to add access to?`,
+            message: `For which Service Provider would you like to add access?`,
             choices: [
                 {
                     name: 'AWS (Federated)',
@@ -56,17 +77,25 @@ class Add {
                 { name: 'Other', value: 'other' },
             ],
         });
+        let added = false;
         switch (type) {
             case 'aws': {
-                await this.awsHelper.promptProvider(org, repo, config);
+                added = await this.awsHelper.promptProvider(org, repo, config);
+                break;
+            }
+            case 'other': {
+                added = await this.genericHelper.promptProvider(org, repo, config);
                 break;
             }
             default:
                 throw new Error(`Unknown type: ${type}`);
         }
-        await this.configHelper.fetchConfigYaml(org);
-        command_1.ui.updateBottomBar('');
-        console.log('Configuration is valid!');
+        if (added) {
+            await this.configHelper.fetchConfigYaml(org);
+            command_1.ui.updateBottomBar('');
+            console.log('Configuration is valid!');
+        }
+        return added;
     }
     async addPermission() {
         const { org, repo } = await this.orgHelper.promptOrg('log in');
@@ -75,21 +104,25 @@ class Add {
         if (!config.version) {
             throw new Error(`Missing version in config`);
         }
+        let added = false;
         switch (config.version) {
             case '20211212': {
-                await this.addPermissionV20211212(org, repo, config);
+                added = await this.addPermissionV20211212(org, repo, config);
                 break;
             }
             default:
                 throw new Error(`Invalid config version: ${config.version}`);
         }
-        await this.configHelper.fetchConfigYaml(org);
-        command_1.ui.updateBottomBar('');
-        console.log('Configuration is valid!');
+        if (added) {
+            await this.configHelper.fetchConfigYaml(org);
+            command_1.ui.updateBottomBar('');
+            console.log('Configuration is valid!');
+        }
+        return added;
     }
     async addPermissionV20211212(org, repo, config) {
         if (!config.providers || !Object.keys(config.providers).length) {
-            throw new Error(`There are no \`providers\` in the in \`${org}/${repo}/${github_init_1.CONFIG_FILE}\`. Add a provider first using the \`add provider\` command`);
+            throw new Error(`There are no \`providers\` in the in \`${org}/${repo}/${init_1.CONFIG_FILE}\`. Add a provider first using the \`add provider\` command`);
         }
         command_1.ui.updateBottomBar('');
         const issuer = (await inquirer_1.default.prompt({
@@ -106,7 +139,7 @@ class Add {
         // TODO: Generic helper add permissions
         throw new Error(`This utility is not familiar with the issuer: ${issuer}
 
-Please add permissions by manually editing the configuration file \`${github_init_1.CONFIG_FILE} in \`${org}/${repo}\`.
+Please add permissions by manually editing the configuration file \`${init_1.CONFIG_FILE} in \`${org}/${repo}\`.
 
 The configuration file reference can be found here: https://docs.saml.to/configuration/reference
 `);

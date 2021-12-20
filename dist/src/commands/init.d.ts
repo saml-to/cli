@@ -1,15 +1,15 @@
-import { GithubLogin } from './github-login';
+import { GithubHelper } from '../helpers/githubHelper';
 import { Scms } from '../stores/scms';
 import { Show } from './show';
 export declare const CONFIG_FILE = "saml-to.yml";
-export declare class GithubInit {
-    githubLogin: GithubLogin;
+export declare class Init {
+    githubHelper: GithubHelper;
     scms: Scms;
     show: Show;
     constructor();
-    handle(force?: boolean): Promise<boolean>;
+    handle(force?: boolean): Promise<void>;
     private assertOrg;
     private assertRepo;
     private registerRepo;
 }
-//# sourceMappingURL=github-init.d.ts.map
+//# sourceMappingURL=init.d.ts.map

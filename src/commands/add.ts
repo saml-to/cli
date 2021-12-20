@@ -7,7 +7,7 @@ import { ui } from '../command';
 import { Show } from './show';
 import { load } from 'js-yaml';
 import { AwsHelper } from '../helpers/awsHelper';
-import { CONFIG_FILE } from './github-init';
+import { CONFIG_FILE } from './init';
 import { ConfigHelper } from '../helpers/configHelper';
 import { OrgHelper } from '../helpers/orgHelper';
 import { GenericHelper } from '../helpers/genericHelper';
@@ -39,11 +39,15 @@ export class Add {
         const added = await this.addProvider();
         if (added) {
           console.log(`
-Next, you may add permissions by running:
-\`add permission\`
+Provider has been registered!
 
-Additional providers can be added by running \`add provider\` again.
-          `);
+Need to add another provider? Run the \`add provider\` command again!
+
+Permissions can be continually added by running the \`add permission\` command.
+
+Once permissions are added, users can login or assume roles using the following commands:
+ - \`saml-to login\`
+ - \`saml-to assume\``);
         }
         break;
       }
@@ -51,14 +55,7 @@ Additional providers can be added by running \`add provider\` again.
         const added = await this.addPermission();
         if (added) {
           console.log(`
-Finally, the users that were provided can login or assume roles:
-- \`login\`
-- \`assume\`
-
-Or, you can direct them to visit: https://saml.to/sso
-
-Additional permissions can be added by running \`add permission\` again.
-          `);
+Permissions have been granted!`);
         }
         break;
       }
@@ -84,7 +81,7 @@ Additional permissions can be added by running \`add permission\` again.
     const { type } = await inquirer.prompt({
       type: 'list',
       name: 'type',
-      message: `What service would you like to add access to?`,
+      message: `For which Service Provider would you like to add access?`,
       choices: [
         {
           name: 'AWS (Federated)',

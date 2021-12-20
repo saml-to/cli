@@ -3,12 +3,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GithubInit = exports.CONFIG_FILE = void 0;
+exports.Init = exports.CONFIG_FILE = void 0;
 // import { RequestError } from '@octokit/request-error';
 // import { RequestError } from '@octokit/request-error';
 const loglevel_1 = __importDefault(require("loglevel"));
 const messages_1 = require("../messages");
-const github_login_1 = require("./github-login");
+const githubHelper_1 = require("../helpers/githubHelper");
 const inquirer_1 = __importDefault(require("inquirer"));
 const github_sls_rest_api_1 = require("../../api/github-sls-rest-api");
 const scms_1 = require("../stores/scms");
@@ -24,12 +24,12 @@ const EMPTY_CONFIG = {
     providers: {},
     permissions: {},
 };
-class GithubInit {
-    githubLogin;
+class Init {
+    githubHelper;
     scms;
     show;
     constructor() {
-        this.githubLogin = new github_login_1.GithubLogin();
+        this.githubHelper = new githubHelper_1.GithubHelper();
         this.scms = new scms_1.Scms();
         this.show = new show_1.Show();
     }
@@ -74,7 +74,6 @@ For more information, check out https://docs.saml.to
         this.scms.saveGithubOrg(org);
         command_1.ui.updateBottomBar('');
         console.log(`Repository \`${org}/${repo}\` registered!`);
-        return true;
     }
     async assertOrg(org) {
         const octokit = new rest_1.Octokit();
@@ -96,10 +95,10 @@ For more information, check out https://docs.saml.to
         }
     }
     async assertRepo(org, repo, scope) {
-        await this.githubLogin.assertScope(scope);
+        await this.githubHelper.assertScope(scope, org);
         const { github } = await this.scms.loadClients();
         if (!github) {
-            await this.githubLogin.handle(scope);
+            await this.githubHelper.promptLogin(scope);
             return this.assertRepo(org, repo, scope);
         }
         const { data: user } = await github.users.getAuthenticated();
@@ -112,7 +111,7 @@ For more information, check out https://docs.saml.to
                 if (e instanceof Error) {
                     command_1.ui.updateBottomBar('');
                     console.log((0, messages_1.GITHUB_ACCESS_NEEDED)(org, scope));
-                    await this.githubLogin.handle('repo');
+                    await this.githubHelper.promptLogin('repo', org);
                     return this.assertRepo(org, repo, scope);
                 }
             }
@@ -343,5 +342,5 @@ ${(0, js_yaml_1.dump)(EMPTY_CONFIG)}
         loglevel_1.default.debug('Initialized repo', result);
     }
 }
-exports.GithubInit = GithubInit;
-//# sourceMappingURL=github-init.js.map
+exports.Init = Init;
+//# sourceMappingURL=init.js.map

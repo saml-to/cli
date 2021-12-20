@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GithubLogin = void 0;
+exports.GithubHelper = void 0;
 const auth_sls_rest_api_1 = require("../../api/auth-sls-rest-api");
 const axios_1 = __importDefault(require("axios"));
 const moment_1 = __importDefault(require("moment"));
@@ -11,12 +11,13 @@ const scms_1 = require("../stores/scms");
 const loglevel_1 = __importDefault(require("loglevel"));
 const messages_1 = require("../messages");
 const command_1 = require("../command");
-class GithubLogin {
+const rest_1 = require("@octokit/rest");
+class GithubHelper {
     scms;
     constructor() {
         this.scms = new scms_1.Scms();
     }
-    async handle(scope = 'user:email') {
+    async promptLogin(scope = 'user:email', org) {
         const api = new auth_sls_rest_api_1.JwtGithubApi();
         const { data: oauthDetail } = await api.getOauthDetail();
         const { clientId } = oauthDetail;
@@ -34,6 +35,17 @@ Please open the browser to ${verificationUri}, and enter the code:
 ${userCode}
 `);
         const accessTokenResponse = await this.getAccessToken(clientId, response.data, (0, moment_1.default)().add(response.data.expires_in, 'second'));
+        const octokit = new rest_1.Octokit({ auth: accessTokenResponse.access_token });
+        const { data: user } = await octokit.users.getAuthenticated();
+        if (org && user.login !== org) {
+            const orgs = await octokit.paginate(octokit.orgs.listForAuthenticatedUser);
+            const found = orgs.find((o) => o.login === org);
+            if (!found) {
+                command_1.ui.updateBottomBar('');
+                console.warn(`It appears access to ${org} has not beeen granted, let's try again...`);
+                return this.promptLogin(scope, org);
+            }
+        }
         const location = this.scms.saveGithubToken(accessTokenResponse.access_token);
         console.log(`Saved GitHub credentials to ${location}`);
     }
@@ -66,12 +78,22 @@ ${userCode}
                 .catch((error) => reject(error));
         });
     }
-    async assertScope(scope) {
+    async assertScope(scope, org) {
         command_1.ui.updateBottomBar('Checking scopes...');
-        const { github } = await this.scms.loadClients();
+        let github;
+        try {
+            const clients = await this.scms.loadClients();
+            github = clients.github;
+        }
+        catch (e) {
+            if (e instanceof scms_1.NoTokenError) {
+                await this.promptLogin(scope, org);
+                return this.assertScope(scope, org);
+            }
+            throw e;
+        }
         if (!github) {
-            await this.handle(scope);
-            return this.assertScope(scope);
+            throw new Error(`Unable to load GitHub client`);
         }
         const { headers } = await github.users.getAuthenticated();
         try {
@@ -82,8 +104,8 @@ ${userCode}
                 loglevel_1.default.debug(e.message);
                 command_1.ui.updateBottomBar('');
                 console.log((0, messages_1.GITHUB_SCOPE_NEEDED)(scope));
-                await this.handle(scope);
-                return this.assertScope(scope);
+                await this.promptLogin(scope, org);
+                return this.assertScope(scope, org);
             }
             throw e;
         }
@@ -98,5 +120,5 @@ ${userCode}
         throw new Error(`Missing scope. Expected:${expectedScope} Actual:${scopes}`);
     }
 }
-exports.GithubLogin = GithubLogin;
-//# sourceMappingURL=github-login.js.map
+exports.GithubHelper = GithubHelper;
+//# sourceMappingURL=githubHelper.js.map

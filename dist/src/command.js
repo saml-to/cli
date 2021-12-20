@@ -7,13 +7,12 @@ exports.Command = exports.ui = void 0;
 const helpers_1 = require("yargs/helpers");
 const yargs_1 = __importDefault(require("yargs"));
 const axios_1 = __importDefault(require("axios"));
-const messages_1 = require("./messages");
 const assume_1 = require("./commands/assume");
-const github_init_1 = require("./commands/github-init");
+const init_1 = require("./commands/init");
 const show_1 = require("./commands/show");
 const inquirer_1 = __importDefault(require("inquirer"));
 const scms_1 = require("./stores/scms");
-const github_login_1 = require("./commands/github-login");
+const githubHelper_1 = require("./helpers/githubHelper");
 const add_1 = require("./commands/add");
 const loginWrapper = async (scope, fn) => {
     try {
@@ -21,8 +20,8 @@ const loginWrapper = async (scope, fn) => {
     }
     catch (e) {
         if (e instanceof scms_1.NoTokenError) {
-            const githubLogin = new github_login_1.GithubLogin();
-            await githubLogin.handle(scope);
+            const githubLogin = new githubHelper_1.GithubHelper();
+            await githubLogin.promptLogin(scope);
             await fn();
         }
         else {
@@ -34,13 +33,13 @@ exports.ui = new inquirer_1.default.ui.BottomBar();
 class Command {
     name;
     assume;
-    githubInit;
+    init;
     show;
     add;
     constructor(name) {
         this.name = name;
         this.assume = new assume_1.Assume();
-        this.githubInit = new github_init_1.GithubInit();
+        this.init = new init_1.Init();
         this.show = new show_1.Show();
         this.add = new add_1.Add();
     }
@@ -48,20 +47,17 @@ class Command {
         const ya = yargs_1.default
             .scriptName(this.name)
             .command({
-            command: 'init [scm]',
-            describe: 'Set a repository for the saml.to configuration',
-            handler: async ({ scm, repoUrl, force }) => {
-                const handled = await this.githubInit.handle(scm, repoUrl, force);
-                if (!handled) {
-                    throw new Error(messages_1.UNSUPPORTED_REPO_URL);
-                }
+            command: 'init',
+            describe: 'Initialize SAML.to with a GitHub Repository (use `init --help` for more detail)',
+            handler: async ({ force }) => {
+                await this.init.handle(force);
                 exports.ui.updateBottomBar('');
                 console.log(`
-Next, you will want to configure a service provider for saml.to.
+Next, you can to configure a Service Provider for SAML.to.
 
 The service provider will need your SAML Metadata or Certificicate, available with the following commands:
- - \`${this.name} show metadata\`
- - \`${this.name} show certificate\`
+ - \`${this.name} show metadata --save\`
+ - \`${this.name} show certificate --save\`
 
 More information on Provider configuration can be found here: https://docs.saml.to/configuration/service-providers
 
@@ -70,11 +66,6 @@ Once a service provider is configured, you can then run:
 `);
             },
             builder: {
-                scm: {
-                    demand: true,
-                    choices: ['github'],
-                    default: 'github',
-                },
                 repoUrl: {
                     demand: false,
                     type: 'string',
@@ -88,28 +79,9 @@ Once a service provider is configured, you can then run:
         })
             .command({
             command: 'add [subcommand]',
-            describe: 'Add providers or permissions to the configuration',
+            describe: 'Add providers or permissions to the configuration (use `add --help` for more detail)',
             handler: async ({ subcommand }) => {
                 await loginWrapper('repo', () => this.add.handle(subcommand));
-                if (subcommand === 'provider') {
-                    console.log(`
-Next, you may add permissions by running:
-\`${this.name} add permission\`
-
-Additional providers can be added by running \`${this.name} add provider\` again.
-            `);
-                }
-                if (subcommand === 'permission') {
-                    console.log(`
-Finally, the users that were provided can login or assume roles:
- - \`${this.name} login\`
- - \`${this.name} assume\`
-
-Or, you can direct them to visit: https://saml.to/sso
-
-Additional permissions can be added by running \`${this.name} add permission\` again.
-            `);
-                }
             },
             builder: {
                 subcommand: {
@@ -121,7 +93,7 @@ Additional permissions can be added by running \`${this.name} add permission\` a
         })
             .command({
             command: 'show [subcommand]',
-            describe: 'Show organization configs',
+            describe: 'Show various configurations (use `show --help` for more detail)',
             handler: async ({ org, subcommand, save, refresh, raw }) => loginWrapper('user:email', () => this.show.handle(subcommand, org, save, refresh, raw)),
             builder: {
                 subcommand: {
@@ -156,7 +128,7 @@ Additional permissions can be added by running \`${this.name} add permission\` a
         })
             .command({
             command: 'assume [role]',
-            describe: 'Assume a role. Use the `show roles` command to show available roles',
+            describe: 'Assume a role. Use the `show roles` command to show available roles (use `assume --help` for more detail)',
             handler: ({ role, org, provider, headless }) => loginWrapper('user:email', () => this.assume.handle(role, headless, org, provider)),
             builder: {
                 role: {
