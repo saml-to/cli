@@ -92,7 +92,6 @@ class GenericHelper {
             },
         };
         // TODO: Prompt variables
-        // TODO: Prompt permissions
         config.providers = { ...(config.providers || {}), ...newProvider };
         return this.configHelper.promptConfigUpdate(org, repo, config, `add ${name} provider`);
     }

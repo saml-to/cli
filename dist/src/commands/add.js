@@ -32,15 +32,11 @@ class Add {
                 const added = await this.addProvider();
                 if (added) {
                     console.log(`
-Provider has been registered!
+Next, you may add permissions by running:
+\`add permission\`
 
-Need to add another provider? Run the \`add provider\` command again!
-
-Permissions can be continually added by running the \`add permission\` command.
-
-Once permissions are added, users can login or assume roles using the following commands:
- - \`saml-to login\`
- - \`saml-to assume\``);
+Additional providers can be added by running \`add provider\` again.
+          `);
                 }
                 break;
             }
@@ -48,7 +44,14 @@ Once permissions are added, users can login or assume roles using the following 
                 const added = await this.addPermission();
                 if (added) {
                     console.log(`
-Permissions have been granted!`);
+Finally, the users that were provided can login or assume roles:
+- \`login\`
+- \`assume\`
+
+Or, you can direct them to visit: https://saml.to/sso
+
+Additional permissions can be added by running \`add permission\` again.
+          `);
                 }
                 break;
             }
