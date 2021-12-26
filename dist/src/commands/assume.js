@@ -13,7 +13,7 @@ const open_1 = __importDefault(require("open"));
 const show_1 = require("./show");
 const inquirer_1 = __importDefault(require("inquirer"));
 const command_1 = require("../command");
-const awsHelper_1 = require("../helpers/awsHelper");
+const awsHelper_1 = require("../helpers/aws/awsHelper");
 class Assume {
     scms;
     show;
@@ -22,17 +22,6 @@ class Assume {
         this.scms = new scms_1.Scms();
         this.show = new show_1.Show();
         this.awsHelper = new awsHelper_1.AwsHelper();
-    }
-    async list(org, refresh) {
-        const accessToken = this.scms.getGithubToken();
-        if (!accessToken) {
-            throw new Error(messages_1.NO_GITHUB_CLIENT);
-        }
-        const idpApi = new github_sls_rest_api_1.IDPApi(new github_sls_rest_api_1.Configuration({
-            accessToken: accessToken,
-        }));
-        const { data: roles } = await idpApi.listRoles(org, refresh);
-        console.table(roles.results, ['org', 'provider', 'role']);
     }
     async handle(role, headless = false, org, provider) {
         loglevel_1.default.debug(`Assuming ${role} (headless: ${headless} org: ${org} provider: ${provider})`);
@@ -90,8 +79,13 @@ class Assume {
         return;
     }
     async assumeBrowser(samlResponse) {
-        loglevel_1.default.debug('Opening browser to:', samlResponse.browserUri);
-        await (0, open_1.default)(samlResponse.browserUri);
+        if (samlResponse.browserUri) {
+            loglevel_1.default.debug('Opening browser to:', samlResponse.browserUri);
+            await (0, open_1.default)(samlResponse.browserUri);
+        }
+        else {
+            throw new Error(`Browser URI is not set.`);
+        }
     }
     async assumeTerminal(samlResponse) {
         if (samlResponse.recipient.endsWith('.amazon.com/saml')) {

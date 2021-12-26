@@ -1,6 +1,7 @@
 import {
-  GithubSlsRestApiConfigV20211212,
+  GithubSlsRestApiConfigV20220101,
   GithubSlsRestApiProviderV1,
+  GithubSlsRestApiNameIdFormatV1,
 } from '../../api/github-sls-rest-api';
 import inquirer from 'inquirer';
 import { ui } from '../command';
@@ -14,6 +15,10 @@ import { GenericHelper } from '../helpers/genericHelper';
 import { AwsSsoHelper } from '../helpers/aws/awsSsoHelper';
 
 export type AddSubcommands = 'provider' | 'permission';
+
+export type AddNameIdFormats = GithubSlsRestApiNameIdFormatV1 | 'none';
+
+export type AddAttributes = { [key: string]: string };
 
 export class Add {
   show: Show;
@@ -37,17 +42,30 @@ export class Add {
     this.genericHelper = new GenericHelper();
   }
 
-  public async handle(subcommand: AddSubcommands): Promise<void> {
+  public async handle(
+    subcommand: AddSubcommands,
+    name?: string,
+    entityId?: string,
+    acsUrl?: string,
+    loginUrl?: string,
+    nameId?: string,
+    nameIdFormat?: AddNameIdFormats,
+    attributes?: { [key: string]: string },
+  ): Promise<void> {
     switch (subcommand) {
       case 'provider': {
-        const added = await this.addProvider();
+        const added = await this.addProvider(
+          name,
+          entityId,
+          acsUrl,
+          loginUrl,
+          nameId,
+          nameIdFormat,
+          attributes,
+        );
         if (added) {
           console.log(`
-Provider has been registered!
-
-Need to add another provider? Run the \`add provider\` command again!
-
-Permissions can be continually added by running the \`add permission\` command.
+Provider has been added!
 
 Once permissions are added, users can login or assume roles using the following commands:
  - \`saml-to login\`
@@ -68,7 +86,15 @@ Permissions have been granted!`);
     }
   }
 
-  private async addProvider(): Promise<boolean> {
+  private async addProvider(
+    name?: string,
+    entityId?: string,
+    acsUrl?: string,
+    loginUrl?: string,
+    nameId?: string,
+    nameIdFormat?: AddNameIdFormats,
+    attributes?: { [key: string]: string },
+  ): Promise<boolean> {
     const { org, repo } = await this.orgHelper.promptOrg('manage');
 
     ui.updateBottomBar('Fetching config...');
@@ -81,41 +107,36 @@ Permissions have been granted!`);
       throw new Error(`Missing version in config`);
     }
 
-    ui.updateBottomBar('');
-    const { type } = await inquirer.prompt({
-      type: 'list',
-      name: 'type',
-      message: `For which Service Provider would you like to add access?`,
-      choices: [
-        {
-          name: 'AWS (Federated)',
-          value: 'aws',
-        },
-        {
-          name: 'AWS (SSO)',
-          value: 'aws-sso',
-        },
-        { name: 'Other', value: 'other' },
-      ],
-    });
+    // ui.updateBottomBar('');
+    // const { type } = await inquirer.prompt({
+    //   type: 'list',
+    //   name: 'type',
+    //   message: `For which Service Provider would you like to add access?`,
+    //   choices: [
+    //     {
+    //       name: 'AWS (Federated)',
+    //       value: 'aws',
+    //     },
+    //     {
+    //       name: 'AWS (SSO)',
+    //       value: 'aws-sso',
+    //     },
+    //     { name: 'Other', value: 'other' },
+    //   ],
+    // });
 
-    let added = false;
-    switch (type) {
-      case 'aws': {
-        added = await this.awsHelper.promptProvider(org, repo, config);
-        break;
-      }
-      case 'aws-sso': {
-        added = await this.awsSsoHelper.promptProvider(org, repo, config);
-        break;
-      }
-      case 'other': {
-        added = await this.genericHelper.promptProvider(org, repo, config);
-        break;
-      }
-      default:
-        throw new Error(`Unknown type: ${type}`);
-    }
+    const added = await this.genericHelper.promptProvider(
+      org,
+      repo,
+      config,
+      name,
+      entityId,
+      acsUrl,
+      loginUrl,
+      nameId,
+      nameIdFormat,
+      attributes,
+    );
 
     if (added) {
       await this.configHelper.fetchConfigYaml(org);
@@ -139,11 +160,11 @@ Permissions have been granted!`);
 
     let added = false;
     switch (config.version) {
-      case '20211212': {
-        added = await this.addPermissionV20211212(
+      case '20220101': {
+        added = await this.addPermissionV20220101(
           org,
           repo,
-          config as GithubSlsRestApiConfigV20211212,
+          config as GithubSlsRestApiConfigV20220101,
         );
         break;
       }
@@ -161,10 +182,10 @@ Permissions have been granted!`);
     return added;
   }
 
-  private async addPermissionV20211212(
+  private async addPermissionV20220101(
     org: string,
     repo: string,
-    config: GithubSlsRestApiConfigV20211212,
+    config: GithubSlsRestApiConfigV20220101,
   ): Promise<boolean> {
     if (!config.providers || !Object.keys(config.providers).length) {
       throw new Error(
@@ -179,13 +200,13 @@ Permissions have been granted!`);
         name: 'issuer',
         message: `For which provider would you like to grant user permission?`,
         choices: Object.entries(config.providers).map(([k, c]) => {
-          return { name: k, value: c.issuer };
+          return { name: k, value: c.entityId };
         }),
       })
     ).issuer;
 
     if (issuer && (issuer as string).toLowerCase().endsWith('.amazon.com/saml')) {
-      return this.awsHelper.promptPermissionV20211212(org, repo, config);
+      return this.awsHelper.promptPermissionV20220101(org, repo, config);
     }
 
     // TODO: Generic helper add permissions

@@ -89,6 +89,16 @@ class Scms {
         }
         return new rest_1.Octokit({ auth: token });
     }
+    async getLogin() {
+        const token = this.getGithubToken();
+        if (!token) {
+            throw new Error('Unable to get token');
+        }
+        const octokit = new rest_1.Octokit({ auth: token });
+        command_1.ui.updateBottomBar('Fetching GitHub identity...');
+        const { data: user } = await octokit.users.getAuthenticated();
+        return user.login;
+    }
 }
 exports.Scms = Scms;
 //# sourceMappingURL=scms.js.map

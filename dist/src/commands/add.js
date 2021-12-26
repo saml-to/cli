@@ -8,35 +8,38 @@ const inquirer_1 = __importDefault(require("inquirer"));
 const command_1 = require("../command");
 const show_1 = require("./show");
 const js_yaml_1 = require("js-yaml");
-const awsHelper_1 = require("../helpers/awsHelper");
+const awsHelper_1 = require("../helpers/aws/awsHelper");
 const init_1 = require("./init");
 const configHelper_1 = require("../helpers/configHelper");
 const orgHelper_1 = require("../helpers/orgHelper");
 const genericHelper_1 = require("../helpers/genericHelper");
+const awsSsoHelper_1 = require("../helpers/aws/awsSsoHelper");
 class Add {
     show;
     awsHelper;
+    awsSsoHelper;
     configHelper;
     orgHelper;
     genericHelper;
     constructor() {
         this.show = new show_1.Show();
         this.awsHelper = new awsHelper_1.AwsHelper();
+        this.awsSsoHelper = new awsSsoHelper_1.AwsSsoHelper();
         this.configHelper = new configHelper_1.ConfigHelper();
         this.orgHelper = new orgHelper_1.OrgHelper();
         this.genericHelper = new genericHelper_1.GenericHelper();
     }
-    async handle(subcommand) {
+    async handle(subcommand, name, entityId, acsUrl, loginUrl, nameId, nameIdFormat, attributes) {
         switch (subcommand) {
             case 'provider': {
-                const added = await this.addProvider();
+                const added = await this.addProvider(name, entityId, acsUrl, loginUrl, nameId, nameIdFormat, attributes);
                 if (added) {
                     console.log(`
-Next, you may add permissions by running:
-\`add permission\`
+Provider has been added!
 
-Additional providers can be added by running \`add provider\` again.
-          `);
+Once permissions are added, users can login or assume roles using the following commands:
+ - \`saml-to login\`
+ - \`saml-to assume\``);
                 }
                 break;
             }
@@ -44,14 +47,7 @@ Additional providers can be added by running \`add provider\` again.
                 const added = await this.addPermission();
                 if (added) {
                     console.log(`
-Finally, the users that were provided can login or assume roles:
-- \`login\`
-- \`assume\`
-
-Or, you can direct them to visit: https://saml.to/sso
-
-Additional permissions can be added by running \`add permission\` again.
-          `);
+Permissions have been granted!`);
                 }
                 break;
             }
@@ -59,7 +55,7 @@ Additional permissions can be added by running \`add permission\` again.
                 throw new Error(`Unknown subcommand: ${subcommand}`);
         }
     }
-    async addProvider() {
+    async addProvider(name, entityId, acsUrl, loginUrl, nameId, nameIdFormat, attributes) {
         const { org, repo } = await this.orgHelper.promptOrg('manage');
         command_1.ui.updateBottomBar('Fetching config...');
         const configYaml = await this.configHelper.fetchConfigYaml(org, true);
@@ -67,32 +63,24 @@ Additional permissions can be added by running \`add permission\` again.
         if (!config.version) {
             throw new Error(`Missing version in config`);
         }
-        command_1.ui.updateBottomBar('');
-        const { type } = await inquirer_1.default.prompt({
-            type: 'list',
-            name: 'type',
-            message: `For which Service Provider would you like to add access?`,
-            choices: [
-                {
-                    name: 'AWS (Federated)',
-                    value: 'aws',
-                },
-                { name: 'Other', value: 'other' },
-            ],
-        });
-        let added = false;
-        switch (type) {
-            case 'aws': {
-                added = await this.awsHelper.promptProvider(org, repo, config);
-                break;
-            }
-            case 'other': {
-                added = await this.genericHelper.promptProvider(org, repo, config);
-                break;
-            }
-            default:
-                throw new Error(`Unknown type: ${type}`);
-        }
+        // ui.updateBottomBar('');
+        // const { type } = await inquirer.prompt({
+        //   type: 'list',
+        //   name: 'type',
+        //   message: `For which Service Provider would you like to add access?`,
+        //   choices: [
+        //     {
+        //       name: 'AWS (Federated)',
+        //       value: 'aws',
+        //     },
+        //     {
+        //       name: 'AWS (SSO)',
+        //       value: 'aws-sso',
+        //     },
+        //     { name: 'Other', value: 'other' },
+        //   ],
+        // });
+        const added = await this.genericHelper.promptProvider(org, repo, config, name, entityId, acsUrl, loginUrl, nameId, nameIdFormat, attributes);
         if (added) {
             await this.configHelper.fetchConfigYaml(org);
             command_1.ui.updateBottomBar('');
@@ -109,8 +97,8 @@ Additional permissions can be added by running \`add permission\` again.
         }
         let added = false;
         switch (config.version) {
-            case '20211212': {
-                added = await this.addPermissionV20211212(org, repo, config);
+            case '20220101': {
+                added = await this.addPermissionV20220101(org, repo, config);
                 break;
             }
             default:
@@ -123,7 +111,7 @@ Additional permissions can be added by running \`add permission\` again.
         }
         return added;
     }
-    async addPermissionV20211212(org, repo, config) {
+    async addPermissionV20220101(org, repo, config) {
         if (!config.providers || !Object.keys(config.providers).length) {
             throw new Error(`There are no \`providers\` in the in \`${org}/${repo}/${init_1.CONFIG_FILE}\`. Add a provider first using the \`add provider\` command`);
         }
@@ -133,11 +121,11 @@ Additional permissions can be added by running \`add permission\` again.
             name: 'issuer',
             message: `For which provider would you like to grant user permission?`,
             choices: Object.entries(config.providers).map(([k, c]) => {
-                return { name: k, value: c.issuer };
+                return { name: k, value: c.entityId };
             }),
         })).issuer;
         if (issuer && issuer.toLowerCase().endsWith('.amazon.com/saml')) {
-            return this.awsHelper.promptPermissionV20211212(org, repo, config);
+            return this.awsHelper.promptPermissionV20220101(org, repo, config);
         }
         // TODO: Generic helper add permissions
         throw new Error(`This utility is not familiar with the issuer: ${issuer}

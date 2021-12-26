@@ -31,21 +31,6 @@ export class Assume {
     this.awsHelper = new AwsHelper();
   }
 
-  async list(org?: string, refresh?: boolean): Promise<void> {
-    const accessToken = this.scms.getGithubToken();
-    if (!accessToken) {
-      throw new Error(NO_GITHUB_CLIENT);
-    }
-
-    const idpApi = new IDPApi(
-      new Configuration({
-        accessToken: accessToken,
-      }),
-    );
-    const { data: roles } = await idpApi.listRoles(org, refresh);
-    console.table(roles.results, ['org', 'provider', 'role']);
-  }
-
   async handle(role?: string, headless = false, org?: string, provider?: string): Promise<void> {
     log.debug(`Assuming ${role} (headless: ${headless} org: ${org} provider: ${provider})`);
 
@@ -108,8 +93,12 @@ export class Assume {
   }
 
   private async assumeBrowser(samlResponse: GithubSlsRestApiSamlResponseContainer): Promise<void> {
-    log.debug('Opening browser to:', samlResponse.browserUri);
-    await open(samlResponse.browserUri);
+    if (samlResponse.browserUri) {
+      log.debug('Opening browser to:', samlResponse.browserUri);
+      await open(samlResponse.browserUri);
+    } else {
+      throw new Error(`Browser URI is not set.`);
+    }
   }
 
   private async assumeTerminal(samlResponse: GithubSlsRestApiSamlResponseContainer): Promise<void> {

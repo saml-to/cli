@@ -1,6 +1,5 @@
 import {
-  GithubSlsRestApiConfigV20211212,
-  GithubSlsRestApiVariableV1,
+  GithubSlsRestApiConfigV20220101,
   GithubSlsRestApiProviderV1,
   GithubSlsRestApiSamlResponseContainer,
   GithubSlsRestApiAwsAssumeSdkOptions,
@@ -24,17 +23,17 @@ export class AwsHelper {
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types,@typescript-eslint/no-explicit-any
   async promptProvider(org: string, repo: string, config: any): Promise<boolean> {
     switch (config.version) {
-      case '20211212':
-        return this.promptProviderV20211212(org, repo, config as GithubSlsRestApiConfigV20211212);
+      case '20220101':
+        return this.promptProviderV20220101(org, repo, config as GithubSlsRestApiConfigV20220101);
       default:
         throw new Error(`Unknown version ${config.version}`);
     }
   }
 
-  private async promptProviderV20211212(
+  private async promptProviderV20220101(
     org: string,
     repo: string,
-    config: GithubSlsRestApiConfigV20211212,
+    config: GithubSlsRestApiConfigV20220101,
   ): Promise<boolean> {
     if (config.providers && config.providers.aws) {
       throw new Error(
@@ -55,26 +54,19 @@ export class AwsHelper {
       message: `What is your AWS Account ID?`,
     });
 
-    const newVariables: { [key: string]: GithubSlsRestApiVariableV1 } = {
-      awsAccountId: `${accountId}`,
-    };
-
     const newProvider: { [key: string]: GithubSlsRestApiProviderV1 } = {
       aws: {
-        audience: 'https://signin.aws.amazon.com/saml',
-        acs: 'https://signin.aws.amazon.com/saml',
-        issuer: 'https://signin.aws.amazon.com/saml',
-        nameId: '<#= user.github.login #>',
+        entityId: 'https://signin.aws.amazon.com/saml',
+        acsUrl: 'https://signin.aws.amazon.com/saml',
+        loginUrl: 'https://signin.aws.amazon.com/saml',
         attributes: {
           'https://aws.amazon.com/SAML/Attributes/RoleSessionName': '<#= user.github.login #>',
           'https://aws.amazon.com/SAML/Attributes/SessionDuration': '3600',
-          'https://aws.amazon.com/SAML/Attributes/Role':
-            '<#= user.selectedRole #>,arn:aws:iam::<$= awsAccountId $>:saml-provider/saml.to',
+          'https://aws.amazon.com/SAML/Attributes/Role': `<#= user.selectedRole #>,arn:aws:iam::${accountId}:saml-provider/saml.to`,
         },
       },
     };
 
-    config.variables = { ...(config.variables || {}), ...newVariables };
     config.providers = { ...(config.providers || {}), ...newProvider };
 
     const { addPermissions } = await inquirer.prompt({
@@ -87,13 +79,13 @@ export class AwsHelper {
       return this.configHelper.promptConfigUpdate(org, repo, config, `aws: add provider`);
     }
 
-    return this.promptPermissionV20211212(org, repo, config);
+    return this.promptPermissionV20220101(org, repo, config);
   }
 
-  public async promptPermissionV20211212(
+  public async promptPermissionV20220101(
     org: string,
     repo: string,
-    config: GithubSlsRestApiConfigV20211212,
+    config: GithubSlsRestApiConfigV20220101,
   ): Promise<boolean> {
     config.permissions = config.permissions || {};
     config.permissions.aws = config.permissions.aws || {};

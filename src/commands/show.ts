@@ -1,5 +1,10 @@
 import { NO_ORG } from '../messages';
-import { IDPApi, Configuration, GithubSlsRestApiRoleResponse } from '../../api/github-sls-rest-api';
+import {
+  IDPApi,
+  Configuration,
+  GithubSlsRestApiRoleResponse,
+  GithubSlsRestApiLoginResponse,
+} from '../../api/github-sls-rest-api';
 import { CONFIG_DIR, Scms } from '../stores/scms';
 import fs from 'fs';
 import path from 'path';
@@ -7,7 +12,16 @@ import { ui } from '../command';
 import { ConfigHelper } from '../helpers/configHelper';
 import { OrgHelper } from '../helpers/orgHelper';
 
-export type ShowSubcommands = 'metadata' | 'certificate' | 'roles' | 'logins' | 'orgs' | 'config';
+export type ShowSubcommands =
+  | 'metadata'
+  | 'certificate'
+  | 'entityId'
+  | 'loginUrl'
+  | 'logoutUrl'
+  | 'roles'
+  | 'logins'
+  | 'orgs'
+  | 'config';
 
 export class Show {
   scms: Scms;
@@ -41,7 +55,8 @@ export class Show {
         return;
       }
       case 'logins': {
-        throw new Error('Not supported yet');
+        await this.showLogins(org, refresh, save);
+        return;
       }
       default:
         break;
@@ -64,6 +79,15 @@ export class Show {
       case 'config': {
         return this.showConfig(org, save, raw);
       }
+      case 'entityId': {
+        return this.showEntityId(org, save);
+      }
+      case 'loginUrl': {
+        return this.showLoginUrl(org, save);
+      }
+      case 'logoutUrl': {
+        return this.showLogoutUrl(org, save);
+      }
       default:
         break;
     }
@@ -74,6 +98,7 @@ export class Show {
   private async showConfig(org: string, save?: boolean, raw?: boolean): Promise<void> {
     const config = await this.configHelper.fetchConfigYaml(org, raw);
     if (!save) {
+      ui.updateBottomBar('');
       console.log(config);
     } else {
       const location = path.join(CONFIG_DIR, `${org}-config.yaml`);
@@ -81,6 +106,42 @@ export class Show {
       ui.updateBottomBar('');
       console.log(`Config saved to ${location}`);
     }
+  }
+
+  public async fetchEntityId(org: string): Promise<string> {
+    const accessToken = this.scms.getGithubToken();
+    const idpApi = new IDPApi(
+      new Configuration({
+        accessToken: accessToken,
+      }),
+    );
+    const { data: metadata } = await idpApi.getOrgMetadata(org);
+    const { entityId } = metadata;
+    return entityId;
+  }
+
+  public async fetchLoginUrl(org: string): Promise<string> {
+    const accessToken = this.scms.getGithubToken();
+    const idpApi = new IDPApi(
+      new Configuration({
+        accessToken: accessToken,
+      }),
+    );
+    const { data: metadata } = await idpApi.getOrgMetadata(org);
+    const { loginUrl } = metadata;
+    return loginUrl;
+  }
+
+  public async fetchLogoutUrl(org: string): Promise<string> {
+    const accessToken = this.scms.getGithubToken();
+    const idpApi = new IDPApi(
+      new Configuration({
+        accessToken: accessToken,
+      }),
+    );
+    const { data: metadata } = await idpApi.getOrgMetadata(org);
+    const { logoutUrl } = metadata;
+    return logoutUrl;
   }
 
   public async fetchMetadataXml(org: string): Promise<string> {
@@ -98,6 +159,7 @@ export class Show {
   private async showMetadata(org: string, save?: boolean): Promise<void> {
     const metadataXml = await this.fetchMetadataXml(org);
     if (!save) {
+      ui.updateBottomBar('');
       console.log(metadataXml);
     } else {
       const location = path.join(CONFIG_DIR, `${org}-metadata.xml`);
@@ -118,6 +180,7 @@ export class Show {
     const { certificate } = metadata;
 
     if (!save) {
+      ui.updateBottomBar('');
       console.log(certificate);
     } else {
       const location = path.join(CONFIG_DIR, `${org}-certificate.pem`);
@@ -138,7 +201,7 @@ export class Show {
       console.table(orgs, ['org']);
     } else {
       const location = path.join(CONFIG_DIR, `orgs.json`);
-      fs.writeFileSync(location, JSON.stringify(orgs));
+      fs.writeFileSync(location, JSON.stringify({ orgs }));
       ui.updateBottomBar('');
       console.log(`Orgs saved to ${location}`);
     }
@@ -164,14 +227,84 @@ export class Show {
     if (!save) {
       ui.updateBottomBar('');
       if (!roles.length) {
-        console.log(`No roles in ${org}`);
+        throw new Error('No roles are available to assume');
       }
-      console.table(roles, ['org', 'provider', 'role']);
+      console.table(roles, ['role', 'provider', 'org']);
     } else {
-      const location = path.join(CONFIG_DIR, `${org}-roles.json`);
-      fs.writeFileSync(location, JSON.stringify(roles));
+      const location = path.join(CONFIG_DIR, `roles.json`);
+      fs.writeFileSync(location, JSON.stringify({ roles }));
       ui.updateBottomBar('');
       console.log(`Roles saved to ${location}`);
+    }
+  }
+
+  public async fetchLogins(
+    org?: string,
+    refresh?: boolean,
+  ): Promise<GithubSlsRestApiLoginResponse[]> {
+    const accessToken = this.scms.getGithubToken();
+    const idpApi = new IDPApi(
+      new Configuration({
+        accessToken: accessToken,
+      }),
+    );
+    const { data: logins } = await idpApi.listLogins(org, refresh);
+    return logins.results;
+  }
+
+  private async showLogins(org?: string, refresh?: boolean, save?: boolean): Promise<void> {
+    const logins = await this.fetchLogins(org, refresh);
+
+    if (!save) {
+      ui.updateBottomBar('');
+      if (!logins.length) {
+        throw new Error('No providers are available to login');
+      }
+      console.table(logins, ['provider', 'org']);
+    } else {
+      const location = path.join(CONFIG_DIR, `logins.json`);
+      fs.writeFileSync(location, JSON.stringify({ logins }));
+      ui.updateBottomBar('');
+      console.log(`Logins saved to ${location}`);
+    }
+  }
+
+  private async showEntityId(org: string, save?: boolean): Promise<void> {
+    const entityId = await this.fetchEntityId(org);
+    if (!save) {
+      ui.updateBottomBar('');
+      console.log(entityId);
+    } else {
+      const location = path.join(CONFIG_DIR, `${org}-entityId.json`);
+      fs.writeFileSync(location, JSON.stringify({ entityId }));
+      ui.updateBottomBar('');
+      console.log(`Entity ID saved to ${location}`);
+    }
+  }
+
+  private async showLoginUrl(org: string, save?: boolean): Promise<void> {
+    const loginUrl = await this.fetchLoginUrl(org);
+    if (!save) {
+      ui.updateBottomBar('');
+      console.log(loginUrl);
+    } else {
+      const location = path.join(CONFIG_DIR, `${org}-loginUrl.json`);
+      fs.writeFileSync(location, JSON.stringify({ loginUrl }));
+      ui.updateBottomBar('');
+      console.log(`Entity ID saved to ${location}`);
+    }
+  }
+
+  private async showLogoutUrl(org: string, save?: boolean): Promise<void> {
+    const logoutUrl = await this.fetchLogoutUrl(org);
+    if (!save) {
+      ui.updateBottomBar('');
+      console.log(logoutUrl);
+    } else {
+      const location = path.join(CONFIG_DIR, `${org}-logoutUrl.json`);
+      fs.writeFileSync(location, JSON.stringify({ logoutUrl }));
+      ui.updateBottomBar('');
+      console.log(`Entity ID saved to ${location}`);
     }
   }
 }

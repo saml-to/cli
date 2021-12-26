@@ -17,5 +17,6 @@ export declare class Scms {
     getGithubToken(): string | undefined;
     getOrg(): string | undefined;
     private getOctokit;
+    getLogin(): Promise<string>;
 }
 //# sourceMappingURL=scms.d.ts.map

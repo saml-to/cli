@@ -14,6 +14,7 @@ const inquirer_1 = __importDefault(require("inquirer"));
 const scms_1 = require("./stores/scms");
 const githubHelper_1 = require("./helpers/githubHelper");
 const add_1 = require("./commands/add");
+const login_1 = require("./commands/login");
 const loginWrapper = async (scope, fn) => {
     try {
         await fn();
@@ -33,12 +34,14 @@ exports.ui = new inquirer_1.default.ui.BottomBar();
 class Command {
     name;
     assume;
+    login;
     init;
     show;
     add;
     constructor(name) {
         this.name = name;
         this.assume = new assume_1.Assume();
+        this.login = new login_1.Login();
         this.init = new init_1.Init();
         this.show = new show_1.Show();
         this.add = new add_1.Add();
@@ -48,7 +51,7 @@ class Command {
             .scriptName(this.name)
             .command({
             command: 'init',
-            describe: 'Initialize SAML.to with a GitHub Repository (use `init --help` for more detail)',
+            describe: 'Initialize SAML.to with a GitHub Repository',
             handler: async ({ force }) => {
                 await this.init.handle(force);
                 exports.ui.updateBottomBar('');
@@ -56,8 +59,8 @@ class Command {
 Next, you can to configure a Service Provider for SAML.to.
 
 The service provider will need your SAML Metadata or Certificicate, available with the following commands:
- - \`${this.name} show metadata --save\`
- - \`${this.name} show certificate --save\`
+ - \`${this.name} show metadata\`
+ - \`${this.name} show certificate\`
 
 More information on Provider configuration can be found here: https://docs.saml.to/configuration/service-providers
 
@@ -78,28 +81,88 @@ Once a service provider is configured, you can then run:
             },
         })
             .command({
-            command: 'add [subcommand]',
-            describe: 'Add providers or permissions to the configuration (use `add --help` for more detail)',
-            handler: async ({ subcommand }) => {
-                await loginWrapper('repo', () => this.add.handle(subcommand));
+            command: 'add provider [name]',
+            describe: 'Add a provider to the configuration',
+            handler: async ({ name, entityId, acsUrl, loginUrl, nameId, nameIdFormat, attribute }) => {
+                await loginWrapper('repo', () => this.add.handle('provider', name, entityId, acsUrl, loginUrl, nameId, nameIdFormat || 'NONE', attribute));
             },
             builder: {
-                subcommand: {
-                    demand: true,
+                name: {
+                    demand: false,
                     type: 'string',
-                    choices: ['provider', 'permission'],
+                },
+                entityId: {
+                    demand: false,
+                    type: 'string',
+                },
+                acsUrl: {
+                    demand: false,
+                    type: 'string',
+                },
+                loginUrl: {
+                    demand: false,
+                    type: 'string',
+                },
+                nameId: {
+                    demand: false,
+                    type: 'string',
+                },
+                nameIdFormat: {
+                    demand: false,
+                    type: 'string',
+                    choices: ['id', 'login', 'email', 'emailV2', 'none'],
+                },
+                attribute: {
+                    demand: false,
+                    type: 'array',
+                    description: 'Additional addtributes in key=value pairs',
+                    coerce: (values) => {
+                        if (!values || !Array.isArray(values)) {
+                            return;
+                        }
+                        return values.reduce((acc, value) => {
+                            try {
+                                const parsed = JSON.parse(('{"' +
+                                    value
+                                        .replace(/^\s+|\s+$/g, '')
+                                        .replace(/=(?=\s|$)/g, '="" ')
+                                        .replace(/\s+(?=([^"]*"[^"]*")*[^"]*$)/g, '", "')
+                                        .replace(/=/g, '": "') +
+                                    '"}').replace(/""/g, '"'));
+                                return {
+                                    ...acc,
+                                    ...parsed,
+                                };
+                            }
+                            catch (e) {
+                                if (e instanceof Error) {
+                                    throw new Error(`Error parsing ${value}: ${e.message}`);
+                                }
+                            }
+                        }, {});
+                    },
                 },
             },
         })
             .command({
             command: 'show [subcommand]',
-            describe: 'Show various configurations (use `show --help` for more detail)',
+            describe: `Show various configurations (metadata, certificate, entityId, config, etc.) Use \`${this.name} show --help\` for the available subcommands.`,
             handler: async ({ org, subcommand, save, refresh, raw }) => loginWrapper('user:email', () => this.show.handle(subcommand, org, save, refresh, raw)),
             builder: {
                 subcommand: {
                     demand: true,
                     type: 'string',
-                    choices: ['metadata', 'certificate', 'config', 'roles', 'logins', 'orgs'],
+                    choices: [
+                        'metadata',
+                        'certificate',
+                        'entityId',
+                        'loginUrl',
+                        'logoutUrl',
+                        'config',
+                        'roles',
+                        'logins',
+                        'orgs',
+                    ],
                 },
                 org: {
                     demand: false,
@@ -109,7 +172,6 @@ Once a service provider is configured, you can then run:
                 save: {
                     demand: false,
                     type: 'boolean',
-                    default: false,
                     description: 'Output to a file',
                 },
                 refresh: {
@@ -128,7 +190,7 @@ Once a service provider is configured, you can then run:
         })
             .command({
             command: 'assume [role]',
-            describe: 'Assume a role. Use the `show roles` command to show available roles (use `assume --help` for more detail)',
+            describe: 'Assume a role',
             handler: ({ role, org, provider, headless }) => loginWrapper('user:email', () => this.assume.handle(role, headless, org, provider)),
             builder: {
                 role: {
@@ -151,6 +213,23 @@ Once a service provider is configured, you can then run:
                     demand: false,
                     type: 'string',
                     description: 'Specify the provider',
+                },
+            },
+        })
+            .command({
+            command: 'login [provider]',
+            describe: 'Login to a provider',
+            handler: ({ org, provider }) => loginWrapper('user:email', () => this.login.handle(provider, org)),
+            builder: {
+                provider: {
+                    demand: true,
+                    type: 'string',
+                    description: 'The provider for which to login',
+                },
+                org: {
+                    demand: false,
+                    type: 'string',
+                    description: 'Specify an organization',
                 },
             },
         })

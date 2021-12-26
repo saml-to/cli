@@ -1,11 +1,11 @@
 {
   "auth-sls-rest-api": {
-    "base-url": "https://sso.saml.to/auth",
+    "base-url": "https://sso-nonlive.saml.to/auth",
     "service-name": "auth-sls-rest-api",
     "service-slug": "auth"
   },
   "github-sls-rest-api": {
-    "base-url": "https://sso.saml.to/github",
+    "base-url": "https://sso-nonlive.saml.to/github",
     "service-name": "github-sls-rest-api",
     "service-slug": "github"
   }

@@ -110,4 +110,18 @@ export class Scms {
     }
     return new Octokit({ auth: token });
   }
+
+  public async getLogin(): Promise<string> {
+    const token = this.getGithubToken();
+    if (!token) {
+      throw new Error('Unable to get token');
+    }
+
+    const octokit = new Octokit({ auth: token });
+
+    ui.updateBottomBar('Fetching GitHub identity...');
+    const { data: user } = await octokit.users.getAuthenticated();
+
+    return user.login;
+  }
 }

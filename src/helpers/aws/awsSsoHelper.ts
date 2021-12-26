@@ -1,5 +1,5 @@
 import {
-  GithubSlsRestApiConfigV20211212,
+  GithubSlsRestApiConfigV20220101,
   GithubSlsRestApiProviderV1,
 } from '../../../api/github-sls-rest-api';
 import inquirer from 'inquirer';
@@ -20,17 +20,17 @@ export class AwsSsoHelper {
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types,@typescript-eslint/no-explicit-any
   async promptProvider(org: string, repo: string, config: any): Promise<boolean> {
     switch (config.version) {
-      case '20211212':
-        return this.promptProviderV20211212(org, repo, config as GithubSlsRestApiConfigV20211212);
+      case '20220101':
+        return this.promptProviderV20220101(org, repo, config as GithubSlsRestApiConfigV20220101);
       default:
         throw new Error(`Unknown version ${config.version}`);
     }
   }
 
-  private async promptProviderV20211212(
+  private async promptProviderV20220101(
     org: string,
     repo: string,
-    config: GithubSlsRestApiConfigV20211212,
+    config: GithubSlsRestApiConfigV20220101,
   ): Promise<boolean> {
     if (config.providers && config.providers['aws-sso']) {
       throw new Error(
@@ -39,30 +39,29 @@ export class AwsSsoHelper {
     }
 
     ui.updateBottomBar('');
-    const { audience } = await inquirer.prompt({
+    const { loginUrl } = await inquirer.prompt({
       type: 'input',
-      name: 'audience',
+      name: 'loginUrl',
       message: `What is the AWS SSO Sign-in URL?`,
     });
 
-    const { acs } = await inquirer.prompt({
+    const { acsUrl } = await inquirer.prompt({
       type: 'input',
-      name: 'acs',
+      name: 'acsUrl',
       message: `What is the AWS SSO ACS URL?`,
     });
 
-    const { issuer } = await inquirer.prompt({
+    const { entityId } = await inquirer.prompt({
       type: 'input',
-      name: 'issuer',
+      name: 'entityId',
       message: `What is the AWS SSO issuer URL?`,
     });
 
     const newProvider: { [key: string]: GithubSlsRestApiProviderV1 } = {
       ['aws-sso']: {
-        audience,
-        acs,
-        issuer,
-        nameId: '<#= user.github.email #>',
+        entityId,
+        acsUrl,
+        loginUrl,
         attributes: {},
       },
     };
@@ -79,13 +78,13 @@ export class AwsSsoHelper {
       return this.configHelper.promptConfigUpdate(org, repo, config, `aws-sso: add provider`);
     }
 
-    return this.promptPermissionV20211212(org, repo, config);
+    return this.promptPermissionV20220101(org, repo, config);
   }
 
-  public async promptPermissionV20211212(
+  public async promptPermissionV20220101(
     org: string,
     repo: string,
-    config: GithubSlsRestApiConfigV20211212,
+    config: GithubSlsRestApiConfigV20220101,
   ): Promise<boolean> {
     config.permissions = config.permissions || {};
     config.permissions['aws-sso'] = config.permissions['aws-sso'] || {};
