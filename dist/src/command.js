@@ -50,8 +50,89 @@ class Command {
         const ya = yargs_1.default
             .scriptName(this.name)
             .command({
+            command: 'list-logins',
+            describe: `Show providers that are available to login`,
+            handler: async ({ org, refresh }) => loginWrapper('user:email', () => this.show.handle('logins', org, false, refresh, false)),
+            builder: {
+                org: {
+                    demand: false,
+                    type: 'string',
+                    description: 'Specify an organization',
+                },
+                refresh: {
+                    demand: false,
+                    type: 'boolean',
+                    default: false,
+                    description: 'Refresh cached logins from source control',
+                },
+            },
+        })
+            .command({
+            command: 'list-roles',
+            describe: `Show roles that are available to assume`,
+            handler: async ({ org, refresh }) => loginWrapper('user:email', () => this.show.handle('roles', org, false, refresh, false)),
+            builder: {
+                org: {
+                    demand: false,
+                    type: 'string',
+                    description: 'Specify an organization',
+                },
+                refresh: {
+                    demand: false,
+                    type: 'boolean',
+                    default: false,
+                    description: 'Refresh cached logins from source control',
+                },
+            },
+        })
+            .command({
+            command: 'login [provider]',
+            describe: `Login to a provider`,
+            handler: ({ org, provider }) => loginWrapper('user:email', () => this.login.handle(provider, org)),
+            builder: {
+                provider: {
+                    demand: true,
+                    type: 'string',
+                    description: 'The provider for which to login',
+                },
+                org: {
+                    demand: false,
+                    type: 'string',
+                    description: 'Specify an organization',
+                },
+            },
+        })
+            .command({
+            command: 'assume [role]',
+            describe: 'Assume a role',
+            handler: ({ role, org, provider, headless }) => loginWrapper('user:email', () => this.assume.handle(role, headless, org, provider)),
+            builder: {
+                role: {
+                    demand: false,
+                    type: 'string',
+                    description: 'The role to assume',
+                },
+                org: {
+                    demand: false,
+                    type: 'string',
+                    description: 'Specify an organization',
+                },
+                headless: {
+                    demand: false,
+                    type: 'boolean',
+                    default: false,
+                    description: 'Output access credentials to the terminal',
+                },
+                provider: {
+                    demand: false,
+                    type: 'string',
+                    description: 'Specify the provider',
+                },
+            },
+        })
+            .command({
             command: 'init',
-            describe: 'Initialize SAML.to with a GitHub Repository',
+            describe: '(Administrative) Initialize SAML.to with a GitHub Repository',
             handler: async ({ force }) => {
                 await this.init.handle(force);
                 exports.ui.updateBottomBar('');
@@ -61,11 +142,7 @@ Next, you can to configure a Service Provider for SAML.to.
 The service provider will need your SAML Metadata or Certificicate, available with the following commands:
  - \`${this.name} show metadata\`
  - \`${this.name} show certificate\`
-
-More information on Provider configuration can be found here: https://docs.saml.to/configuration/service-providers
-
-Once a service provider is configured, you can then run:
-\`${this.name} add provider\`
+ - \`${this.name} add provider\`
 `);
             },
             builder: {
@@ -82,7 +159,7 @@ Once a service provider is configured, you can then run:
         })
             .command({
             command: 'add provider [name]',
-            describe: 'Add a provider to the configuration',
+            describe: '(Administrative) Add a provider to the configuration',
             handler: async ({ name, entityId, acsUrl, loginUrl, nameId, nameIdFormat, attribute }) => {
                 await loginWrapper('repo', () => this.add.handle('provider', name, entityId, acsUrl, loginUrl, nameId, nameIdFormat || 'NONE', attribute));
             },
@@ -146,7 +223,7 @@ Once a service provider is configured, you can then run:
         })
             .command({
             command: 'show [subcommand]',
-            describe: `Show various configurations (metadata, certificate, entityId, config, etc.) Use \`${this.name} show --help\` for the available subcommands.`,
+            describe: `(Administrative) Show various configurations (metadata, certificate, entityId, config, etc.)`,
             handler: async ({ org, subcommand, save, refresh, raw }) => loginWrapper('user:email', () => this.show.handle(subcommand, org, save, refresh, raw)),
             builder: {
                 subcommand: {
@@ -185,51 +262,6 @@ Once a service provider is configured, you can then run:
                     type: 'boolean',
                     default: false,
                     description: 'For `config` subcommand, show raw configuration',
-                },
-            },
-        })
-            .command({
-            command: 'assume [role]',
-            describe: 'Assume a role',
-            handler: ({ role, org, provider, headless }) => loginWrapper('user:email', () => this.assume.handle(role, headless, org, provider)),
-            builder: {
-                role: {
-                    demand: false,
-                    type: 'string',
-                    description: 'The role to assume',
-                },
-                org: {
-                    demand: false,
-                    type: 'string',
-                    description: 'Specify an organization',
-                },
-                headless: {
-                    demand: false,
-                    type: 'boolean',
-                    default: false,
-                    description: 'Output access credentials to the terminal',
-                },
-                provider: {
-                    demand: false,
-                    type: 'string',
-                    description: 'Specify the provider',
-                },
-            },
-        })
-            .command({
-            command: 'login [provider]',
-            describe: 'Login to a provider',
-            handler: ({ org, provider }) => loginWrapper('user:email', () => this.login.handle(provider, org)),
-            builder: {
-                provider: {
-                    demand: true,
-                    type: 'string',
-                    description: 'The provider for which to login',
-                },
-                org: {
-                    demand: false,
-                    type: 'string',
-                    description: 'Specify an organization',
                 },
             },
         })

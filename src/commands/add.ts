@@ -67,7 +67,8 @@ export class Add {
           console.log(`
 Provider has been added!
 
-Once permissions are added, users can login or assume roles using the following commands:
+Users can login or assume roles using the following commands:
+
  - \`saml-to login\`
  - \`saml-to assume\``);
         }
@@ -106,24 +107,6 @@ Permissions have been granted!`);
     if (!config.version) {
       throw new Error(`Missing version in config`);
     }
-
-    // ui.updateBottomBar('');
-    // const { type } = await inquirer.prompt({
-    //   type: 'list',
-    //   name: 'type',
-    //   message: `For which Service Provider would you like to add access?`,
-    //   choices: [
-    //     {
-    //       name: 'AWS (Federated)',
-    //       value: 'aws',
-    //     },
-    //     {
-    //       name: 'AWS (SSO)',
-    //       value: 'aws-sso',
-    //     },
-    //     { name: 'Other', value: 'other' },
-    //   ],
-    // });
 
     const added = await this.genericHelper.promptProvider(
       org,
