@@ -21,14 +21,14 @@ class Show {
         this.configHelper = new configHelper_1.ConfigHelper();
         this.orgHelper = new orgHelper_1.OrgHelper();
     }
-    async handle(subcommand, org, save, refresh, raw) {
+    async handle(subcommand, org, provider, save, refresh, raw) {
         switch (subcommand) {
             case 'orgs': {
                 await this.showOrgs(save);
                 return;
             }
             case 'roles': {
-                await this.showRoles(org, refresh, save);
+                await this.showRoles(org, provider, refresh, save);
                 return;
             }
             case 'logins': {
@@ -164,16 +164,16 @@ class Show {
             console.log(`Orgs saved to ${location}`);
         }
     }
-    async fetchRoles(org, refresh) {
+    async fetchRoles(org, provider, refresh) {
         const accessToken = this.scms.getGithubToken();
         const idpApi = new github_sls_rest_api_1.IDPApi(new github_sls_rest_api_1.Configuration({
             accessToken: accessToken,
         }));
-        const { data: roles } = await idpApi.listRoles(org, refresh);
+        const { data: roles } = await idpApi.listRoles(org, provider, refresh);
         return roles.results;
     }
-    async showRoles(org, refresh, save) {
-        const roles = await this.fetchRoles(org, refresh);
+    async showRoles(org, provider, refresh, save) {
+        const roles = await this.fetchRoles(org, provider, refresh);
         if (!save) {
             command_1.ui.updateBottomBar('');
             if (!roles.length) {

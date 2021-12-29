@@ -8,7 +8,7 @@ export declare class Show {
     configHelper: ConfigHelper;
     orgHelper: OrgHelper;
     constructor();
-    handle(subcommand: ShowSubcommands, org?: string, save?: boolean, refresh?: boolean, raw?: boolean): Promise<void>;
+    handle(subcommand: ShowSubcommands, org?: string, provider?: string, save?: boolean, refresh?: boolean, raw?: boolean): Promise<void>;
     private showConfig;
     fetchEntityId(org: string): Promise<string>;
     fetchLoginUrl(org: string): Promise<string>;
@@ -17,7 +17,7 @@ export declare class Show {
     private showMetadata;
     private showCertificate;
     private showOrgs;
-    fetchRoles(org?: string, refresh?: boolean): Promise<GithubSlsRestApiRoleResponse[]>;
+    fetchRoles(org?: string, provider?: string, refresh?: boolean): Promise<GithubSlsRestApiRoleResponse[]>;
     private showRoles;
     fetchLogins(org?: string, refresh?: boolean): Promise<GithubSlsRestApiLoginResponse[]>;
     private showLogins;

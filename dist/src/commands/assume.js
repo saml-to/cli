@@ -24,28 +24,16 @@ class Assume {
         this.awsHelper = new awsHelper_1.AwsHelper();
     }
     async handle(role, headless = false, org, provider) {
-        loglevel_1.default.debug(`Assuming ${role} (headless: ${headless} org: ${org} provider: ${provider})`);
+        if (!role && !headless) {
+            const choice = await this.promptRole(org, provider);
+            role = choice.role;
+            org = choice.org;
+            provider = choice.provider;
+        }
+        command_1.ui.updateBottomBar(`Assuming ${role}`);
         const token = this.scms.getGithubToken();
         if (!token) {
             throw new Error(messages_1.NO_GITHUB_CLIENT);
-        }
-        if (!role && !headless) {
-            const roles = await this.show.fetchRoles(org);
-            if (!roles.length) {
-                throw new Error(`No roles are available to assume`);
-            }
-            command_1.ui.updateBottomBar('');
-            const { roleIx } = await inquirer_1.default.prompt({
-                type: 'list',
-                name: 'roleIx',
-                message: `What role would you like to assume?`,
-                choices: roles.map((r, ix) => {
-                    return { name: `${r.role} [${r.provider}@${r.org}]`, value: ix };
-                }),
-            });
-            role = roles[roleIx].role;
-            org = roles[roleIx].org;
-            provider = roles[roleIx].provider;
         }
         if (!role) {
             throw new Error(`Please specify a role to assume`);
@@ -92,6 +80,19 @@ class Assume {
             return this.awsHelper.assumeAws(samlResponse);
         }
         throw new Error((0, messages_1.TERMINAL_NOT_SUPPORTED)(samlResponse.provider, samlResponse.recipient));
+    }
+    async promptRole(org, provider) {
+        const roles = await this.show.fetchRoles(org, provider);
+        command_1.ui.updateBottomBar('');
+        const { roleIx } = await inquirer_1.default.prompt({
+            type: 'list',
+            name: 'roleIx',
+            message: `Which role would you like to assume?`,
+            choices: roles.map((r, ix) => {
+                return { name: `${r.role} [${r.provider}] (${r.org})`, value: ix };
+            }),
+        });
+        return roles[roleIx];
     }
 }
 exports.Assume = Assume;

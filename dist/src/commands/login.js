@@ -8,10 +8,11 @@ const github_sls_rest_api_1 = require("../../api/github-sls-rest-api");
 const messages_1 = require("../messages");
 const scms_1 = require("../stores/scms");
 const axios_1 = __importDefault(require("axios"));
-const loglevel_1 = __importDefault(require("loglevel"));
 const open_1 = __importDefault(require("open"));
 const show_1 = require("./show");
 const awsHelper_1 = require("../helpers/aws/awsHelper");
+const command_1 = require("../command");
+const inquirer_1 = __importDefault(require("inquirer"));
 class Login {
     scms;
     show;
@@ -22,7 +23,12 @@ class Login {
         this.awsHelper = new awsHelper_1.AwsHelper();
     }
     async handle(provider, org) {
-        loglevel_1.default.debug(`Logging into ${provider} (org: ${org})`);
+        if (!provider) {
+            const choice = await this.promptLogin(org);
+            provider = choice.provider;
+            org = choice.org;
+        }
+        command_1.ui.updateBottomBar(`Logging into ${provider} (org: ${org})`);
         const token = this.scms.getGithubToken();
         if (!token) {
             throw new Error(messages_1.NO_GITHUB_CLIENT);
@@ -52,12 +58,24 @@ class Login {
     }
     async assumeBrowser(samlResponse) {
         if (samlResponse.browserUri) {
-            loglevel_1.default.debug('Opening browser to:', samlResponse.browserUri);
             await (0, open_1.default)(samlResponse.browserUri);
         }
         else {
             throw new Error(`Browser URI is not set.`);
         }
+    }
+    async promptLogin(org) {
+        const logins = await this.show.fetchLogins(org);
+        command_1.ui.updateBottomBar('');
+        const { loginIx } = await inquirer_1.default.prompt({
+            type: 'list',
+            name: 'loginIx',
+            message: `For which provider would you like to log in?`,
+            choices: logins.map((l, ix) => {
+                return { name: `${l.provider} (${l.org})`, value: ix };
+            }),
+        });
+        return logins[loginIx];
     }
 }
 exports.Login = Login;

@@ -6,6 +6,7 @@ export declare class Command {
     private init;
     private show;
     private add;
+    private set;
     constructor(name: string);
     run(argv: string[]): Promise<void>;
 }

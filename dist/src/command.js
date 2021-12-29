@@ -10,6 +10,7 @@ const axios_1 = __importDefault(require("axios"));
 const assume_1 = require("./commands/assume");
 const init_1 = require("./commands/init");
 const show_1 = require("./commands/show");
+const set_1 = require("./commands/set");
 const inquirer_1 = __importDefault(require("inquirer"));
 const scms_1 = require("./stores/scms");
 const githubHelper_1 = require("./helpers/githubHelper");
@@ -38,6 +39,7 @@ class Command {
     init;
     show;
     add;
+    set;
     constructor(name) {
         this.name = name;
         this.assume = new assume_1.Assume();
@@ -45,6 +47,7 @@ class Command {
         this.init = new init_1.Init();
         this.show = new show_1.Show();
         this.add = new add_1.Add();
+        this.set = new set_1.Set();
     }
     async run(argv) {
         const ya = yargs_1.default
@@ -52,12 +55,17 @@ class Command {
             .command({
             command: 'list-logins',
             describe: `Show providers that are available to login`,
-            handler: async ({ org, refresh }) => loginWrapper('user:email', () => this.show.handle('logins', org, false, refresh, false)),
+            handler: async ({ org, provider, refresh }) => loginWrapper('user:email', () => this.show.handle('logins', org, provider, false, refresh, false)),
             builder: {
                 org: {
                     demand: false,
                     type: 'string',
                     description: 'Specify an organization',
+                },
+                provider: {
+                    demand: false,
+                    type: 'string',
+                    description: 'Specify an provider',
                 },
                 refresh: {
                     demand: false,
@@ -70,12 +78,17 @@ class Command {
             .command({
             command: 'list-roles',
             describe: `Show roles that are available to assume`,
-            handler: async ({ org, refresh }) => loginWrapper('user:email', () => this.show.handle('roles', org, false, refresh, false)),
+            handler: async ({ org, provider, refresh }) => loginWrapper('user:email', () => this.show.handle('roles', org, provider, false, refresh, false)),
             builder: {
                 org: {
                     demand: false,
                     type: 'string',
                     description: 'Specify an organization',
+                },
+                provider: {
+                    demand: false,
+                    type: 'string',
+                    description: 'Specify a provider',
                 },
                 refresh: {
                     demand: false,
@@ -91,7 +104,7 @@ class Command {
             handler: ({ org, provider }) => loginWrapper('user:email', () => this.login.handle(provider, org)),
             builder: {
                 provider: {
-                    demand: true,
+                    demand: false,
                     type: 'string',
                     description: 'The provider for which to login',
                 },
@@ -222,9 +235,44 @@ The service provider will need your SAML Metadata or Certificicate, available wi
             },
         })
             .command({
+            command: 'set [name] [subcommand]',
+            describe: '(Administrative) Set a provider setting (e.g. provisioning',
+            handler: async ({ name, subcommand, type, endpoint, token }) => {
+                await loginWrapper('repo', () => this.set.handle(subcommand, name, {
+                    type: type,
+                    endpoint: endpoint,
+                    token: token,
+                }));
+            },
+            builder: {
+                name: {
+                    demand: true,
+                    type: 'string',
+                },
+                subcommand: {
+                    demand: true,
+                    type: 'string',
+                    choices: ['provisioning'],
+                },
+                type: {
+                    demand: true,
+                    type: 'string',
+                    choices: ['scim'],
+                },
+                endpoint: {
+                    demand: true,
+                    type: 'string',
+                },
+                token: {
+                    demand: true,
+                    type: 'string',
+                },
+            },
+        })
+            .command({
             command: 'show [subcommand]',
             describe: `(Administrative) Show various configurations (metadata, certificate, entityId, config, etc.)`,
-            handler: async ({ org, subcommand, save, refresh, raw }) => loginWrapper('user:email', () => this.show.handle(subcommand, org, save, refresh, raw)),
+            handler: async ({ org, provider, subcommand, save, refresh, raw }) => loginWrapper('user:email', () => this.show.handle(subcommand, org, provider, save, refresh, raw)),
             builder: {
                 subcommand: {
                     demand: true,
@@ -245,6 +293,11 @@ The service provider will need your SAML Metadata or Certificicate, available wi
                     demand: false,
                     type: 'string',
                     description: 'Specify an organization',
+                },
+                provider: {
+                    demand: false,
+                    type: 'string',
+                    description: 'Specify a provider',
                 },
                 save: {
                     demand: false,

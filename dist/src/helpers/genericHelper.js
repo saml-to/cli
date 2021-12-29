@@ -122,7 +122,7 @@ class GenericHelper {
                         name: 'Email (GitHub User Email)',
                         value: 'email',
                     },
-                    { name: 'None', value: 'NONE' },
+                    { name: 'None', value: 'none' },
                 ],
             })).nameIdFormat;
         }
