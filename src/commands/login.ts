@@ -2,14 +2,16 @@ import {
   IDPApi,
   Configuration,
   GithubSlsRestApiLoginResponseContainer,
+  GithubSlsRestApiLoginResponse,
 } from '../../api/github-sls-rest-api';
 import { ERROR_LOGGING_IN, MULTIPLE_LOGINS, NO_GITHUB_CLIENT } from '../messages';
 import { Scms } from '../stores/scms';
 import axios from 'axios';
-import log from 'loglevel';
 import open from 'open';
 import { Show } from './show';
 import { AwsHelper } from '../helpers/aws/awsHelper';
+import { ui } from '../command';
+import inquirer from 'inquirer';
 
 export class Login {
   scms: Scms;
@@ -24,8 +26,14 @@ export class Login {
     this.awsHelper = new AwsHelper();
   }
 
-  async handle(provider: string, org?: string): Promise<void> {
-    log.debug(`Logging into ${provider} (org: ${org})`);
+  async handle(provider?: string, org?: string): Promise<void> {
+    if (!provider) {
+      const choice = await this.promptLogin(org);
+      provider = choice.provider;
+      org = choice.org;
+    }
+
+    ui.updateBottomBar(`Logging into ${provider} (org: ${org})`);
 
     const token = this.scms.getGithubToken();
     if (!token) {
@@ -59,10 +67,25 @@ export class Login {
 
   private async assumeBrowser(samlResponse: GithubSlsRestApiLoginResponseContainer): Promise<void> {
     if (samlResponse.browserUri) {
-      log.debug('Opening browser to:', samlResponse.browserUri);
       await open(samlResponse.browserUri);
     } else {
       throw new Error(`Browser URI is not set.`);
     }
+  }
+
+  async promptLogin(org?: string): Promise<GithubSlsRestApiLoginResponse> {
+    const logins = await this.show.fetchLogins(org);
+
+    ui.updateBottomBar('');
+    const { loginIx } = await inquirer.prompt({
+      type: 'list',
+      name: 'loginIx',
+      message: `For which provider would you like to log in?`,
+      choices: logins.map((l, ix) => {
+        return { name: `${l.provider} (${l.org})`, value: ix };
+      }),
+    });
+
+    return logins[loginIx];
   }
 }

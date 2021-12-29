@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Assume } from './commands/assume';
 import { Init } from './commands/init';
 import { Show, ShowSubcommands } from './commands/show';
+import { ProvisioningTypes, Set, SetSubcommands } from './commands/set';
 import inquirer from 'inquirer';
 import { NoTokenError } from './stores/scms';
 import { GithubHelper } from './helpers/githubHelper';
@@ -37,12 +38,15 @@ export class Command {
 
   private add: Add;
 
+  private set: Set;
+
   constructor(private name: string) {
     this.assume = new Assume();
     this.login = new Login();
     this.init = new Init();
     this.show = new Show();
     this.add = new Add();
+    this.set = new Set();
   }
 
   public async run(argv: string[]): Promise<void> {
@@ -51,11 +55,12 @@ export class Command {
       .command({
         command: 'list-logins',
         describe: `Show providers that are available to login`,
-        handler: async ({ org, refresh }) =>
+        handler: async ({ org, provider, refresh }) =>
           loginWrapper('user:email', () =>
             this.show.handle(
               'logins' as ShowSubcommands,
               org as string | undefined,
+              provider as string | undefined,
               false,
               refresh as boolean | undefined,
               false,
@@ -66,6 +71,11 @@ export class Command {
             demand: false,
             type: 'string',
             description: 'Specify an organization',
+          },
+          provider: {
+            demand: false,
+            type: 'string',
+            description: 'Specify an provider',
           },
           refresh: {
             demand: false,
@@ -78,11 +88,12 @@ export class Command {
       .command({
         command: 'list-roles',
         describe: `Show roles that are available to assume`,
-        handler: async ({ org, refresh }) =>
+        handler: async ({ org, provider, refresh }) =>
           loginWrapper('user:email', () =>
             this.show.handle(
               'roles' as ShowSubcommands,
               org as string | undefined,
+              provider as string | undefined,
               false,
               refresh as boolean | undefined,
               false,
@@ -93,6 +104,11 @@ export class Command {
             demand: false,
             type: 'string',
             description: 'Specify an organization',
+          },
+          provider: {
+            demand: false,
+            type: 'string',
+            description: 'Specify a provider',
           },
           refresh: {
             demand: false,
@@ -107,11 +123,11 @@ export class Command {
         describe: `Login to a provider`,
         handler: ({ org, provider }) =>
           loginWrapper('user:email', () =>
-            this.login.handle(provider as string, org as string | undefined),
+            this.login.handle(provider as string | undefined, org as string | undefined),
           ),
         builder: {
           provider: {
-            demand: true,
+            demand: false,
             type: 'string',
             description: 'The provider for which to login',
           },
@@ -264,13 +280,51 @@ The service provider will need your SAML Metadata or Certificicate, available wi
         },
       })
       .command({
+        command: 'set [name] [subcommand]',
+        describe: '(Administrative) Set a provider setting (e.g. provisioning',
+        handler: async ({ name, subcommand, type, endpoint, token }) => {
+          await loginWrapper('repo', () =>
+            this.set.handle(subcommand as SetSubcommands, name as string, {
+              type: type as ProvisioningTypes,
+              endpoint: endpoint as string,
+              token: token as string,
+            }),
+          );
+        },
+        builder: {
+          name: {
+            demand: true,
+            type: 'string',
+          },
+          subcommand: {
+            demand: true,
+            type: 'string',
+            choices: ['provisioning'] as SetSubcommands[],
+          },
+          type: {
+            demand: true,
+            type: 'string',
+            choices: ['scim'] as ProvisioningTypes[],
+          },
+          endpoint: {
+            demand: true,
+            type: 'string',
+          },
+          token: {
+            demand: true,
+            type: 'string',
+          },
+        },
+      })
+      .command({
         command: 'show [subcommand]',
         describe: `(Administrative) Show various configurations (metadata, certificate, entityId, config, etc.)`,
-        handler: async ({ org, subcommand, save, refresh, raw }) =>
+        handler: async ({ org, provider, subcommand, save, refresh, raw }) =>
           loginWrapper('user:email', () =>
             this.show.handle(
               subcommand as ShowSubcommands,
               org as string | undefined,
+              provider as string | undefined,
               save as boolean | undefined,
               refresh as boolean | undefined,
               raw as boolean | undefined,
@@ -296,6 +350,11 @@ The service provider will need your SAML Metadata or Certificicate, available wi
             demand: false,
             type: 'string',
             description: 'Specify an organization',
+          },
+          provider: {
+            demand: false,
+            type: 'string',
+            description: 'Specify a provider',
           },
           save: {
             demand: false,

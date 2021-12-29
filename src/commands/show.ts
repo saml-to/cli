@@ -41,6 +41,7 @@ export class Show {
   public async handle(
     subcommand: ShowSubcommands,
     org?: string,
+    provider?: string,
     save?: boolean,
     refresh?: boolean,
     raw?: boolean,
@@ -51,7 +52,7 @@ export class Show {
         return;
       }
       case 'roles': {
-        await this.showRoles(org, refresh, save);
+        await this.showRoles(org, provider, refresh, save);
         return;
       }
       case 'logins': {
@@ -209,6 +210,7 @@ export class Show {
 
   public async fetchRoles(
     org?: string,
+    provider?: string,
     refresh?: boolean,
   ): Promise<GithubSlsRestApiRoleResponse[]> {
     const accessToken = this.scms.getGithubToken();
@@ -217,12 +219,17 @@ export class Show {
         accessToken: accessToken,
       }),
     );
-    const { data: roles } = await idpApi.listRoles(org, refresh);
+    const { data: roles } = await idpApi.listRoles(org, provider, refresh);
     return roles.results;
   }
 
-  private async showRoles(org?: string, refresh?: boolean, save?: boolean): Promise<void> {
-    const roles = await this.fetchRoles(org, refresh);
+  private async showRoles(
+    org?: string,
+    provider?: string,
+    refresh?: boolean,
+    save?: boolean,
+  ): Promise<void> {
+    const roles = await this.fetchRoles(org, provider, refresh);
 
     if (!save) {
       ui.updateBottomBar('');

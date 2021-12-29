@@ -2,6 +2,7 @@ import {
   IDPApi,
   Configuration,
   GithubSlsRestApiSamlResponseContainer,
+  GithubSlsRestApiRoleResponse,
 } from '../../api/github-sls-rest-api';
 import {
   ERROR_ASSUMING_ROLE,
@@ -32,31 +33,18 @@ export class Assume {
   }
 
   async handle(role?: string, headless = false, org?: string, provider?: string): Promise<void> {
-    log.debug(`Assuming ${role} (headless: ${headless} org: ${org} provider: ${provider})`);
+    if (!role && !headless) {
+      const choice = await this.promptRole(org, provider);
+      role = choice.role;
+      org = choice.org;
+      provider = choice.provider;
+    }
+
+    ui.updateBottomBar(`Assuming ${role}`);
 
     const token = this.scms.getGithubToken();
     if (!token) {
       throw new Error(NO_GITHUB_CLIENT);
-    }
-
-    if (!role && !headless) {
-      const roles = await this.show.fetchRoles(org);
-      if (!roles.length) {
-        throw new Error(`No roles are available to assume`);
-      }
-      ui.updateBottomBar('');
-      const { roleIx } = await inquirer.prompt({
-        type: 'list',
-        name: 'roleIx',
-        message: `What role would you like to assume?`,
-        choices: roles.map((r, ix) => {
-          return { name: `${r.role} [${r.provider}@${r.org}]`, value: ix };
-        }),
-      });
-
-      role = roles[roleIx].role;
-      org = roles[roleIx].org;
-      provider = roles[roleIx].provider;
     }
 
     if (!role) {
@@ -107,5 +95,21 @@ export class Assume {
     }
 
     throw new Error(TERMINAL_NOT_SUPPORTED(samlResponse.provider, samlResponse.recipient));
+  }
+
+  async promptRole(org?: string, provider?: string): Promise<GithubSlsRestApiRoleResponse> {
+    const roles = await this.show.fetchRoles(org, provider);
+
+    ui.updateBottomBar('');
+    const { roleIx } = await inquirer.prompt({
+      type: 'list',
+      name: 'roleIx',
+      message: `Which role would you like to assume?`,
+      choices: roles.map((r, ix) => {
+        return { name: `${r.role} [${r.provider}] (${r.org})`, value: ix };
+      }),
+    });
+
+    return roles[roleIx];
   }
 }
