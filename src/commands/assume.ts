@@ -40,7 +40,9 @@ export class Assume {
       provider = choice.provider;
     }
 
-    ui.updateBottomBar(`Assuming ${role}`);
+    if (!headless) {
+      ui.updateBottomBar(`Assuming ${role}`);
+    }
 
     const token = this.scms.getGithubToken();
     if (!token) {
