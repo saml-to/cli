@@ -16,7 +16,8 @@
     "plugin:import/recommended"
   ],
   "rules": {
-    "no-console": "off"
+    "no-console": "off",
+    "import/no-extraneous-dependencies": "off"
   },
   "ignorePatterns": [
     // Auto-generated files
