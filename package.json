@@ -31,19 +31,6 @@
     "typescript"
   ],
   "dependencies": {},
-  "bundledDependencies": [
-    "@aws-sdk/client-sts",
-    "@octokit/oauth-app",
-    "@octokit/request-error",
-    "@octokit/rest",
-    "axios",
-    "inquirer",
-    "js-yaml",
-    "loglevel",
-    "moment",
-    "open",
-    "yargs"
-  ],
   "devDependencies": {
     "@aws-sdk/client-sts": "^3.43.0",
     "@octokit/oauth-app": "^3.6.0",
