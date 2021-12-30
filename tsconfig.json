@@ -5,7 +5,7 @@
     "incremental": true,
     "target": "ESNext",
     "module": "CommonJS",
-    "outDir": "dist/",
+    "outDir": "build/",
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
@@ -39,5 +39,5 @@
     /* Advanced Options */
     "forceConsistentCasingInFileNames": true
   },
-  "exclude": ["dist/**/*"]
+  "exclude": ["dist/**/*", "build/**/*"]
 }

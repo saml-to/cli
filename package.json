@@ -18,10 +18,11 @@
     "openapi": "openapi-generator -g axios -i .scaffoldly/$NODE_ENV -o api -r auth-sls-rest-api github-sls-rest-api"
   },
   "bin": {
-    "saml-to": "dist/cli/index.js"
+    "saml-to": "dist/main.js"
   },
   "files": [
-    "dist/**/*"
+    "dist/main.js",
+    "dist/main.js.map"
   ],
   "keywords": [
     "saml",

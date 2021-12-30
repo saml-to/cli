@@ -1,5 +1,7 @@
-node_modules/
-externals/
-/api
+node_modules
+externals
+/api/**/*
 
+/build/**/*
 /dist/**/*.map
+!/dist/main.js.map
