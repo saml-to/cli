@@ -1,6 +1,5 @@
 import {
   GithubSlsRestApiConfigV20220101,
-  GithubSlsRestApiProviderV1,
   GithubSlsRestApiNameIdFormatV1,
 } from '../../api/github-sls-rest-api';
 import inquirer from 'inquirer';
@@ -65,12 +64,7 @@ export class Add {
         );
         if (added) {
           console.log(`
-Provider has been added!
-
-Users can login or assume roles using the following commands:
-
- - \`saml-to login\`
- - \`saml-to assume\``);
+Provider has been added!`);
         }
         break;
       }
@@ -131,7 +125,7 @@ Permissions have been granted!`);
   }
 
   private async addPermission(): Promise<boolean> {
-    const { org, repo } = await this.orgHelper.promptOrg('log in');
+    const { org, repo } = await this.orgHelper.promptOrg('manage');
 
     const configYaml = await this.configHelper.fetchConfigYaml(org, true);
 
@@ -177,27 +171,81 @@ Permissions have been granted!`);
     }
 
     ui.updateBottomBar('');
-    const issuer: GithubSlsRestApiProviderV1 | undefined = (
+    const providerKey: string = (
       await inquirer.prompt({
         type: 'list',
-        name: 'issuer',
+        name: 'providerKey',
         message: `For which provider would you like to grant user permission?`,
-        choices: Object.entries(config.providers).map(([k, c]) => {
-          return { name: k, value: c.entityId };
+        choices: Object.keys(config.providers).map((k) => {
+          return { name: k, value: k };
         }),
       })
-    ).issuer;
+    ).providerKey;
 
-    if (issuer && (issuer as string).toLowerCase().endsWith('.amazon.com/saml')) {
-      return this.awsHelper.promptPermissionV20220101(org, repo, config);
+    const permissions = (config.permissions && config.permissions[providerKey]) || {};
+
+    if (permissions.roles && permissions.users) {
+      throw new Error(
+        `This utility doesn't currently support adding permissions to providers that have roles and users. Please edit the configuration manually:
+
+permissions:
+  TheProviderName:
+    users:
+      github:
+        - AGithubId
+    roles:
+      name: TheRoleName
+      users:
+        github:
+          - AGithubID`,
+      );
     }
 
-    // TODO: Generic helper add permissions
-    throw new Error(`This utility is not familiar with the issuer: ${issuer}
+    if (permissions.roles) {
+      throw new Error(
+        `This utility doesn't currently support adding role assumption permissions. Please edit the configuration manually:
 
-Please add permissions by manually editing the configuration file \`${CONFIG_FILE} in \`${org}/${repo}\`.
+permissions:
+  TheProviderName:
+    roles:
+      name: TheRoleName
+      users:
+        github:
+          - AGithubID
+`,
+      );
+    }
 
-The configuration file reference can be found here: https://docs.saml.to/configuration/reference
-`);
+    let type: 'role-user' | 'sso-user';
+    if (!permissions.roles && !permissions.users) {
+      type = (
+        await inquirer.prompt({
+          type: 'list',
+          name: 'type',
+          message: `Which type of permission would you like to add?`,
+          choices: [
+            { name: 'Role assumption', value: 'role-user' },
+            { name: 'Sign-in Permission', value: 'sso-user' },
+          ],
+        })
+      ).type;
+
+      if (type === 'role-user') {
+        throw new Error(
+          `This utility doesn't currently support adding role assumption permissions. Please edit the configuration manually:
+
+permissions:
+  TheProviderName:
+    roles:
+      name: TheRoleName
+      users:
+        github:
+          - AGithubID
+`,
+        );
+      }
+    }
+
+    return this.genericHelper.promptPermissionV20220101(org, repo, providerKey, config);
   }
 }

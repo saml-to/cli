@@ -26,7 +26,7 @@ export class OrgHelper {
   }
 
   async promptOrg(
-    operation: 'manage' | 'log in' | 'assume',
+    operation: 'view' | 'manage' | 'log in' | 'assume',
   ): Promise<GithubSlsRestApiOrgRepoResponse> {
     const orgs = await this.fetchOrgs();
     if (!orgs.length) {

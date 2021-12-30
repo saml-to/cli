@@ -23,7 +23,27 @@ export class ConfigHelper {
     );
     const { data: result } = await idpApi.getOrgConfig(org, raw);
     return `---
-${dump(result)}`;
+${dump(result, { lineWidth: 1024 })}`;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types,@typescript-eslint/no-explicit-any
+  public dumpConfig(org: string, repo: string, config: any, print = true): string {
+    ui.updateBottomBar('');
+    const configYaml = `
+---
+# Config Reference: 
+# https://docs.saml.to/configuration/reference
+${dump(config, { lineWidth: 1024 })}`;
+
+    if (print) {
+      console.log(`Here is the updated \`${CONFIG_FILE}\` for ${org}/${repo}:
+
+${configYaml}
+
+`);
+    }
+
+    return configYaml;
   }
 
   public async promptConfigUpdate(
@@ -32,20 +52,9 @@ ${dump(result)}`;
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types,@typescript-eslint/no-explicit-any
     config: any,
     title: string,
+    print = true,
   ): Promise<boolean> {
-    ui.updateBottomBar('');
-
-    const configYaml = `
----
-# Config Reference: 
-# https://docs.saml.to/configuration/reference
-${dump(config, { lineWidth: 1024 })}`;
-
-    console.log(`Here is the updated \`${CONFIG_FILE}\` for ${org}/${repo}:
-
-${configYaml}
-
-`);
+    const configYaml = this.dumpConfig(org, repo, config, print);
 
     ui.updateBottomBar('');
     const { type } = await inquirer.prompt({

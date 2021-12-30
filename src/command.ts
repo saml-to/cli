@@ -8,7 +8,7 @@ import { ProvisioningTypes, Set, SetSubcommands } from './commands/set';
 import inquirer from 'inquirer';
 import { NoTokenError } from './stores/scms';
 import { GithubHelper } from './helpers/githubHelper';
-import { Add, AddAttributes, AddNameIdFormats } from './commands/add';
+import { Add, AddAttributes, AddNameIdFormats, AddSubcommands } from './commands/add';
 import { Login } from './commands/login';
 
 const loginWrapper = async (scope: string, fn: () => Promise<void>): Promise<void> => {
@@ -184,8 +184,9 @@ export class Command {
 Next, you can to configure a Service Provider for SAML.to.
 
 The service provider will need your SAML Metadata or Certificicate, available with the following commands:
- - \`${this.name} show metadata\`
+ - \`${this.name} show entityId\`
  - \`${this.name} show certificate\`
+ - \`${this.name} show loginUrl\`
  - \`${this.name} add provider\`
 `);
         },
@@ -202,23 +203,37 @@ The service provider will need your SAML Metadata or Certificicate, available wi
         },
       })
       .command({
-        command: 'add provider [name]',
-        describe: '(Administrative) Add a provider to the configuration',
-        handler: async ({ name, entityId, acsUrl, loginUrl, nameId, nameIdFormat, attribute }) => {
+        command: 'add [type] [name]',
+        describe: '(Administrative) Add providers or permissions to the configuration',
+        handler: async ({
+          type,
+          name,
+          entityId,
+          acsUrl,
+          loginUrl,
+          nameId,
+          nameIdFormat,
+          attribute,
+        }) => {
           await loginWrapper('repo', () =>
             this.add.handle(
-              'provider',
+              type as AddSubcommands,
               name as string | undefined,
               entityId as string | undefined,
               acsUrl as string | undefined,
               loginUrl as string | undefined,
               nameId as string | undefined,
-              (nameIdFormat as AddNameIdFormats) || 'NONE',
+              (nameIdFormat as AddNameIdFormats) || 'none',
               attribute as AddAttributes | undefined,
             ),
           );
         },
         builder: {
+          type: {
+            demand: true,
+            type: 'string',
+            choices: ['provider', 'permission'] as AddSubcommands[],
+          },
           name: {
             demand: false,
             type: 'string',
@@ -252,22 +267,20 @@ The service provider will need your SAML Metadata or Certificicate, available wi
               if (!values || !Array.isArray(values)) {
                 return;
               }
-              return values.reduce((acc, value) => {
+              return values.reduce((acc, value: string) => {
                 try {
-                  const parsed = JSON.parse(
-                    (
-                      '{"' +
-                      value
-                        .replace(/^\s+|\s+$/g, '')
-                        .replace(/=(?=\s|$)/g, '="" ')
-                        .replace(/\s+(?=([^"]*"[^"]*")*[^"]*$)/g, '", "')
-                        .replace(/=/g, '": "') +
-                      '"}'
-                    ).replace(/""/g, '"'),
-                  );
+                  const ix = value.indexOf('=');
+                  if (ix === -1) {
+                    throw new Error(`Attributes must be in key=value format`);
+                  }
+                  const k = value.substring(0, ix);
+                  const v = value
+                    .substring(ix + 1)
+                    .replace(/"(.*)"$/, '$1')
+                    .replace(/'(.*)'$/, '$1');
                   return {
                     ...acc,
-                    ...parsed,
+                    [k]: v,
                   };
                 } catch (e) {
                   if (e instanceof Error) {

@@ -219,6 +219,8 @@ export class GenericHelper {
 
     config.providers = { ...(config.providers || {}), ...newProvider };
 
+    this.configHelper.dumpConfig(org, repo, config, true);
+
     const { addPermissions } = await inquirer.prompt({
       type: 'confirm',
       name: 'addPermissions',
@@ -226,7 +228,13 @@ export class GenericHelper {
     });
 
     if (!addPermissions) {
-      return this.configHelper.promptConfigUpdate(org, repo, config, `${name}: add provider`);
+      return this.configHelper.promptConfigUpdate(
+        org,
+        repo,
+        config,
+        `${name}: add provider`,
+        false,
+      );
     }
 
     return this.promptPermissionV20220101(org, repo, name, config);
@@ -260,6 +268,7 @@ export class GenericHelper {
       `${provider}: grant permissions to login
 
 ${githubLogins.map((l) => `- ${l}`)}`,
+      true,
     );
   }
 

@@ -64,7 +64,8 @@ export class Show {
     }
 
     if (!org) {
-      org = this.scms.getOrg();
+      const response = await this.orgHelper.promptOrg('view');
+      org = response.org;
       if (!org) {
         throw new Error(NO_ORG);
       }
@@ -200,6 +201,7 @@ export class Show {
         console.log(`No orgs`); // TODO Better messaging
       }
       console.table(orgs, ['org']);
+      console.log(`Current Org: `, this.scms.getOrg());
     } else {
       const location = path.join(CONFIG_DIR, `orgs.json`);
       fs.writeFileSync(location, JSON.stringify({ orgs }));
