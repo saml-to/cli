@@ -19,15 +19,15 @@ jobs:
       - uses: actions/cache@v2
         with:
           path: ./node_modules
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-${{ matrix.node }}-yarn-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
-            ${{ runner.os }}-yarn-
+            ${{ runner.os }}-${{ matrix.node }}-yarn-
       - uses: actions/cache@v2
         with:
           path: ./api
-          key: ${{ runner.os }}-openapi-${{ hashFiles('./.openapis') }}
+          key: ${{ runner.os }}-${{ matrix.node }}-openapi-${{ hashFiles('./.openapis') }}
           restore-keys: |
-            ${{ runner.os }}-openapi-
+            ${{ runner.os }}-${{ matrix.node }}-openapi-
       - run: yarn
       - run: yarn openapi
       - run: yarn build
