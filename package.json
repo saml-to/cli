@@ -24,6 +24,10 @@
     "dist/main.js",
     "dist/main.js.map"
   ],
+  "engines": {
+    "node": ">=12"
+  },
+  "engineStrict": true,
   "keywords": [
     "saml",
     "saml.to",
