@@ -2,13 +2,11 @@
 /* eslint-disable no-undef */
 const path = require('path');
 const webpack = require('webpack');
-const nodeExternals = require('webpack-node-externals');
 
 // eslint-disable-next-line no-undef
 module.exports = {
   // CLI Bundling
   target: 'node',
-  externals: [nodeExternals()],
 
   // bundling mode
   mode: 'production',
