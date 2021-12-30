@@ -30,19 +30,7 @@
     "scaffoldly",
     "typescript"
   ],
-  "dependencies": {
-    "@aws-sdk/client-sts": "^3.43.0",
-    "@octokit/oauth-app": "^3.6.0",
-    "@octokit/request-error": "^2.1.0",
-    "@octokit/rest": "^18.12.0",
-    "axios": "^0.24.0",
-    "inquirer": "^8.2.0",
-    "js-yaml": "^4.1.0",
-    "loglevel": "^1.8.0",
-    "moment": "^2.29.1",
-    "open": "^8.4.0",
-    "yargs": "^17.3.0"
-  },
+  "dependencies": {},
   "bundledDependencies": [
     "@aws-sdk/client-sts",
     "@octokit/oauth-app",
@@ -57,6 +45,17 @@
     "yargs"
   ],
   "devDependencies": {
+    "@aws-sdk/client-sts": "^3.43.0",
+    "@octokit/oauth-app": "^3.6.0",
+    "@octokit/request-error": "^2.1.0",
+    "@octokit/rest": "^18.12.0",
+    "axios": "^0.24.0",
+    "inquirer": "^8.2.0",
+    "js-yaml": "^4.1.0",
+    "loglevel": "^1.8.0",
+    "moment": "^2.29.1",
+    "open": "^8.4.0",
+    "yargs": "^17.3.0",
     "@babel/core": "^7.16.0",
     "@babel/eslint-parser": "^7.16.0",
     "@scaffoldly/openapi-generator": "^1.0.22",
