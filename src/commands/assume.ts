@@ -12,7 +12,6 @@ import {
 } from '../messages';
 import { Scms } from '../stores/scms';
 import axios from 'axios';
-import log from 'loglevel';
 import open from 'open';
 import { Show } from './show';
 import inquirer from 'inquirer';
@@ -84,8 +83,8 @@ export class Assume {
 
   private async assumeBrowser(samlResponse: GithubSlsRestApiSamlResponseContainer): Promise<void> {
     if (samlResponse.browserUri) {
-      log.debug('Opening browser to:', samlResponse.browserUri);
-      await open(samlResponse.browserUri);
+      const result = await open(samlResponse.browserUri);
+      console.log('!!! Browser open result', JSON.stringify(result));
     } else {
       throw new Error(`Browser URI is not set.`);
     }

@@ -37,7 +37,6 @@ export class Set {
     provider: string,
     opts: SetHandleOpts,
   ): Promise<void> => {
-    console.log('!!!!', subcommand, provider, opts);
     switch (subcommand) {
       case 'provisioning': {
         await this.promptProvisioning(provider, opts);
