@@ -16,8 +16,8 @@
     "lint": "eslint 'src/**/*.{js,ts,tsx}' --quiet --fix && yarn run prettier --write 'src/**/*.{js,ts,tsx}'",
     "openapi": "openapi-generator -g axios -i .scaffoldly/$NODE_ENV -o api -r auth-sls-rest-api github-sls-rest-api"
   },
+  "main": "dist/main.js",
   "bin": {
-    "cli": "dist/main.js",
     "saml-to": "dist/main.js"
   },
   "files": [
