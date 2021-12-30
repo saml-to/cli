@@ -21,7 +21,7 @@ jobs:
             ${{ runner.os }}-yarn-
       - uses: actions/cache@v2
         with:
-          path: ./src/services/openapi
+          path: ./api
           key: ${{ runner.os }}-openapi-${{ hashFiles('./.openapis') }}
           restore-keys: |
             ${{ runner.os }}-openapi-
