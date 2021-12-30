@@ -30,7 +30,9 @@ class Assume {
             org = choice.org;
             provider = choice.provider;
         }
-        command_1.ui.updateBottomBar(`Assuming ${role}`);
+        if (!headless) {
+            command_1.ui.updateBottomBar(`Assuming ${role}`);
+        }
         const token = this.scms.getGithubToken();
         if (!token) {
             throw new Error(messages_1.NO_GITHUB_CLIENT);
