@@ -20,6 +20,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-yarn-
       - run: yarn
+      - run: yarn build
       - uses: scaffoldly/bump-version-action@v1
         with:
           action: postrelease
