@@ -31,7 +31,8 @@ jobs:
       - run: yarn
       - run: yarn openapi
       - run: yarn build
-      - uses: scaffoldly/bump-version-action@v1
+      - if: ${{ matrix.node == '12' }}
+        uses: scaffoldly/bump-version-action@v1
         with:
           action: prerelease
           version-file: package.json
