@@ -1,17 +1,22 @@
-// eslint-disable-next-line no-undef,@typescript-eslint/no-var-requires
+/* eslint-disable @typescript-eslint/no-var-requires */
+/* eslint-disable no-undef */
 const path = require('path');
+const nodeExternals = require('webpack-node-externals');
 
 // eslint-disable-next-line no-undef
 module.exports = {
+  // CLI Bundling
+  target: 'node',
+  externals: [nodeExternals()],
+
   // bundling mode
   mode: 'production',
 
   // entry files
-  entry: './src/index.ts',
+  entry: './cli/index.ts',
 
   // output bundles (location)
   output: {
-    // eslint-disable-next-line no-undef
     path: path.resolve(__dirname, 'dist'),
     filename: 'main.js',
   },
@@ -31,4 +36,6 @@ module.exports = {
       },
     ],
   },
+
+  devtool: 'source-map',
 };
