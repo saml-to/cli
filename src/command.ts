@@ -12,12 +12,16 @@ import { Add, AddAttributes, AddNameIdFormats, AddSubcommands } from './commands
 import { Login } from './commands/login';
 import { MessagesHelper } from './helpers/messagesHelper';
 
-const loginWrapper = async (scope: string, fn: () => Promise<void>): Promise<void> => {
+const loginWrapper = async (
+  messagesHelper: MessagesHelper,
+  scope: string,
+  fn: () => Promise<void>,
+): Promise<void> => {
   try {
     await fn();
   } catch (e) {
     if (e instanceof NoTokenError) {
-      const githubLogin = new GithubHelper();
+      const githubLogin = new GithubHelper(messagesHelper);
       await githubLogin.promptLogin(scope);
       await fn();
     } else {
@@ -43,24 +47,24 @@ export class Command {
 
   private set: Set;
 
-  constructor(private name: string) {
-    this.messagesHelper = new MessagesHelper(name);
-    this.assume = new Assume();
-    this.login = new Login();
+  constructor(argv: string[]) {
+    this.messagesHelper = new MessagesHelper(argv);
+    this.assume = new Assume(this.messagesHelper);
+    this.login = new Login(this.messagesHelper);
     this.init = new Init(this.messagesHelper);
     this.show = new Show();
-    this.add = new Add();
+    this.add = new Add(this.messagesHelper);
     this.set = new Set();
   }
 
   public async run(argv: string[]): Promise<void> {
     const ya = yargs
-      .scriptName(this.name)
+      .scriptName(this.messagesHelper.processName)
       .command({
         command: 'list-logins',
         describe: `Show providers that are available to login`,
         handler: async ({ org, provider, refresh }) =>
-          loginWrapper('user:email', () =>
+          loginWrapper(this.messagesHelper, 'user:email', () =>
             this.show.handle(
               'logins' as ShowSubcommands,
               org as string | undefined,
@@ -93,7 +97,7 @@ export class Command {
         command: 'list-roles',
         describe: `Show roles that are available to assume`,
         handler: async ({ org, provider, refresh }) =>
-          loginWrapper('user:email', () =>
+          loginWrapper(this.messagesHelper, 'user:email', () =>
             this.show.handle(
               'roles' as ShowSubcommands,
               org as string | undefined,
@@ -126,7 +130,7 @@ export class Command {
         command: 'login [provider]',
         describe: `Login to a provider`,
         handler: ({ org, provider }) =>
-          loginWrapper('user:email', () =>
+          loginWrapper(this.messagesHelper, 'user:email', () =>
             this.login.handle(provider as string | undefined, org as string | undefined),
           ),
         builder: {
@@ -146,7 +150,7 @@ export class Command {
         command: 'assume [role]',
         describe: 'Assume a role',
         handler: ({ role, org, provider, headless }) =>
-          loginWrapper('user:email', () =>
+          loginWrapper(this.messagesHelper, 'user:email', () =>
             this.assume.handle(
               role as string,
               headless as boolean,
@@ -183,16 +187,6 @@ export class Command {
         describe: '(Administrative) Initialize SAML.to with a GitHub Repository',
         handler: async ({ force }) => {
           await this.init.handle(force as boolean | undefined);
-          ui.updateBottomBar('');
-          console.log(`
-Next, you can to configure a Service Provider for SAML.to.
-
-The service provider will need your SAML Metadata or Certificicate, available with the following commands:
- - \`${this.name} show entityId\`
- - \`${this.name} show certificate\`
- - \`${this.name} show loginUrl\`
- - \`${this.name} add provider\`
-`);
         },
         builder: {
           repoUrl: {
@@ -217,9 +211,10 @@ The service provider will need your SAML Metadata or Certificicate, available wi
           loginUrl,
           nameId,
           nameIdFormat,
+          role,
           attribute,
         }) => {
-          await loginWrapper('repo', () =>
+          await loginWrapper(this.messagesHelper, 'repo', () =>
             this.add.handle(
               type as AddSubcommands,
               name as string | undefined,
@@ -228,6 +223,7 @@ The service provider will need your SAML Metadata or Certificicate, available wi
               loginUrl as string | undefined,
               nameId as string | undefined,
               (nameIdFormat as AddNameIdFormats) || 'none',
+              role as string | undefined,
               attribute as AddAttributes | undefined,
             ),
           );
@@ -262,6 +258,10 @@ The service provider will need your SAML Metadata or Certificicate, available wi
             demand: false,
             type: 'string',
             choices: ['id', 'login', 'email', 'emailV2', 'none'] as AddNameIdFormats[],
+          },
+          role: {
+            demand: false,
+            type: 'string',
           },
           attribute: {
             demand: false,
@@ -300,7 +300,7 @@ The service provider will need your SAML Metadata or Certificicate, available wi
         command: 'set [name] [subcommand]',
         describe: '(Administrative) Set a provider setting (e.g. provisioning',
         handler: async ({ name, subcommand, type, endpoint, token }) => {
-          await loginWrapper('repo', () =>
+          await loginWrapper(this.messagesHelper, 'repo', () =>
             this.set.handle(subcommand as SetSubcommands, name as string, {
               type: type as ProvisioningTypes,
               endpoint: endpoint as string,
@@ -337,7 +337,7 @@ The service provider will need your SAML Metadata or Certificicate, available wi
         command: 'show [subcommand]',
         describe: `(Administrative) Show various configurations (metadata, certificate, entityId, config, etc.)`,
         handler: async ({ org, provider, subcommand, save, refresh, raw }) =>
-          loginWrapper('user:email', () =>
+          loginWrapper(this.messagesHelper, 'user:email', () =>
             this.show.handle(
               subcommand as ShowSubcommands,
               org as string | undefined,

@@ -9,15 +9,16 @@ import { ui } from '../../command';
 import { ConfigHelper } from '../configHelper';
 import { GenericHelper } from '../genericHelper';
 import { STS } from '@aws-sdk/client-sts';
+import { MessagesHelper } from '../messagesHelper';
 
 export class AwsHelper {
   configHelper: ConfigHelper;
 
   genericHelper: GenericHelper;
 
-  constructor() {
+  constructor(messagesHelper: MessagesHelper) {
     this.configHelper = new ConfigHelper();
-    this.genericHelper = new GenericHelper();
+    this.genericHelper = new GenericHelper(messagesHelper);
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types,@typescript-eslint/no-explicit-any

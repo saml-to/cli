@@ -13,6 +13,7 @@ import { AwsHelper } from '../helpers/aws/awsHelper';
 import { GithubHelper } from '../helpers/githubHelper';
 import { ui } from '../command';
 import inquirer from 'inquirer';
+import { MessagesHelper } from '../helpers/messagesHelper';
 
 export class Login {
   scms: Scms;
@@ -23,11 +24,11 @@ export class Login {
 
   githubHelper: GithubHelper;
 
-  constructor() {
+  constructor(messagesHelper: MessagesHelper) {
     this.scms = new Scms();
     this.show = new Show();
-    this.awsHelper = new AwsHelper();
-    this.githubHelper = new GithubHelper();
+    this.awsHelper = new AwsHelper(messagesHelper);
+    this.githubHelper = new GithubHelper(messagesHelper);
   }
 
   async handle(provider?: string, org?: string): Promise<void> {

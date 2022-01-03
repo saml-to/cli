@@ -17,6 +17,7 @@ import { Show } from './show';
 import inquirer from 'inquirer';
 import { ui } from '../command';
 import { AwsHelper } from '../helpers/aws/awsHelper';
+import { MessagesHelper } from '../helpers/messagesHelper';
 
 export class Assume {
   scms: Scms;
@@ -25,10 +26,10 @@ export class Assume {
 
   awsHelper: AwsHelper;
 
-  constructor() {
+  constructor(messagesHelper: MessagesHelper) {
     this.scms = new Scms();
     this.show = new Show();
-    this.awsHelper = new AwsHelper();
+    this.awsHelper = new AwsHelper(messagesHelper);
   }
 
   async handle(role?: string, headless = false, org?: string, provider?: string): Promise<void> {

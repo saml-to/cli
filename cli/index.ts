@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import log from 'loglevel';
 import { Command } from '../src/command';
 
 process.on('SIGINT', () => {
@@ -9,9 +8,7 @@ process.on('SIGINT', () => {
 
 (async () => {
   try {
-    log.debug('Starting CLI');
-    const command = new Command('saml-to');
-    console.log(`!!! process.argv`, process.argv);
+    const command = new Command(process.argv);
     await command.run(process.argv);
   } catch (e) {
     if (e instanceof Error) {

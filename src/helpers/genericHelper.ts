@@ -9,6 +9,9 @@ import { ui } from '../command';
 import { ConfigHelper } from './configHelper';
 import { Scms } from '../stores/scms';
 import { AddNameIdFormats } from '../commands/add';
+import { Show } from '../commands/show';
+import { MessagesHelper } from './messagesHelper';
+import { CONFIG_FILE } from '../commands/init';
 
 export const trainCase = (str: string): string => {
   if (!str) {
@@ -29,9 +32,12 @@ export class GenericHelper {
 
   scms: Scms;
 
-  constructor() {
+  show: Show;
+
+  constructor(private messagesHelper: MessagesHelper) {
     this.configHelper = new ConfigHelper();
     this.scms = new Scms();
+    this.show = new Show();
   }
 
   public async promptUsers(provider: string, role?: string, users?: string[]): Promise<string[]> {
@@ -70,7 +76,7 @@ export class GenericHelper {
 
     users.push(user);
 
-    return this.promptUsers(provider, role, [...new Set(users)]);
+    return [...new Set(await this.promptUsers(provider, role, users))];
   }
 
   async promptProvider(
@@ -84,6 +90,7 @@ export class GenericHelper {
     loginUrl?: string,
     nameId?: string,
     nameIdFormat?: AddNameIdFormats,
+    role?: string,
     attributes?: { [key: string]: string },
   ): Promise<boolean> {
     ui.updateBottomBar('');
@@ -101,6 +108,8 @@ export class GenericHelper {
       throw new Error('Name is required');
     }
 
+    this.messagesHelper.context.provider = name;
+
     switch (config.version) {
       case '20220101':
         return this.promptProviderV20220101(
@@ -113,6 +122,7 @@ export class GenericHelper {
           loginUrl,
           nameId,
           nameIdFormat,
+          role,
           attributes,
         );
       default:
@@ -130,12 +140,18 @@ export class GenericHelper {
     loginUrl?: string,
     nameId?: string,
     nameIdFormat?: AddNameIdFormats,
+    role?: string,
     attributes?: { [key: string]: string },
   ): Promise<boolean> {
     if (config.providers && config.providers[name]) {
       throw new Error(
         `An provider named \`${name}\` already exists, please manually edit the configuration to add another`,
       );
+    }
+
+    let cliProvidedInputs = false;
+    if (entityId && acsUrl) {
+      cliProvidedInputs = true;
     }
 
     ui.updateBottomBar('');
@@ -159,14 +175,43 @@ export class GenericHelper {
       ).acsUrl;
     }
 
-    if (!loginUrl) {
-      loginUrl = (
-        await inquirer.prompt({
-          type: 'input',
-          name: 'loginUrl',
-          message: `What is the Login URL for ${name}?`,
-        })
-      ).loginUrl;
+    if (!loginUrl && loginUrl !== 'NONE') {
+      const { initiation } = await inquirer.prompt({
+        type: 'list',
+        name: 'initiation',
+        message: `How are SAML login requests initiated?`,
+        default: 'sp',
+        choices: [
+          {
+            name: 'By the Service Provider ("SP-Initiated")',
+            value: 'sp',
+          },
+          {
+            name: 'By the Identity Provider ("IdP-Initiated")',
+            value: 'ip',
+          },
+          {
+            name: "I don't know",
+            value: 'dunno',
+          },
+        ],
+      });
+
+      if (initiation === 'dunno') {
+        this.messagesHelper.unknownInitiation(name, CONFIG_FILE);
+      } else if (initiation === 'sp') {
+        loginUrl = (
+          await inquirer.prompt({
+            type: 'input',
+            name: 'loginUrl',
+            message: `What is the Login URL for ${name}?`,
+          })
+        ).loginUrl;
+      }
+    }
+
+    if (loginUrl === 'NONE') {
+      loginUrl = undefined;
     }
 
     if (!nameIdFormat) {
@@ -237,7 +282,39 @@ export class GenericHelper {
       );
     }
 
-    return this.promptPermissionV20220101(org, repo, name, config);
+    if (!role && !cliProvidedInputs) {
+      const type = await this.promptLoginType();
+      this.messagesHelper.context.loginType = type;
+      if (type === 'role-user') {
+        return this.promptRolePermissionV20220101(org, repo, name, config, role);
+      }
+    }
+
+    if (role) {
+      this.messagesHelper.context.loginType = 'role-user';
+      return this.promptRolePermissionV20220101(org, repo, name, config, role);
+    } else {
+      this.messagesHelper.context.loginType = 'sso-user';
+      return this.promptPermissionV20220101(org, repo, name, config);
+    }
+  }
+
+  public async promptLoginType(): Promise<'role-user' | 'sso-user'> {
+    let type: 'role-user' | 'sso-user' = 'sso-user';
+    type = (
+      await inquirer.prompt({
+        type: 'list',
+        name: 'type',
+        message: `Which type of permission would you like to add?`,
+        default: 'sso-user',
+        choices: [
+          { name: 'Role assumption', value: 'role-user' },
+          { name: 'Sign-in Permission (a.k.a. SSO)', value: 'sso-user' },
+        ],
+      })
+    ).type;
+
+    return type;
   }
 
   public async promptPermissionV20220101(
@@ -266,6 +343,77 @@ export class GenericHelper {
       repo,
       config,
       `${provider}: grant permissions to login
+
+${githubLogins.map((l) => `- ${l}`)}`,
+      true,
+    );
+  }
+
+  public async promptRolePermissionV20220101(
+    org: string,
+    repo: string,
+    provider: string,
+    config: GithubSlsRestApiConfigV20220101,
+    role?: string,
+  ): Promise<boolean> {
+    config.permissions = config.permissions || {};
+    config.permissions[provider] = config.permissions[provider] || {};
+    config.permissions[provider].roles = config.permissions[provider].roles || [];
+
+    ui.updateBottomBar('');
+    if (!role) {
+      role = (
+        await inquirer.prompt({
+          type: 'list',
+          name: 'roleName',
+          message: `What is the name of the role you would like to allow for assumption?`,
+          choices: [
+            ...(config.permissions[provider].roles || []).map((r) => ({ name: r.name })),
+            { name: 'Add a new role', value: '' },
+          ],
+        })
+      ).roleName;
+
+      if (!role) {
+        const { input } = await inquirer.prompt({
+          type: 'input',
+          name: 'input',
+          message: `What is name of the new role?
+  `,
+        });
+        role = input;
+      }
+    }
+
+    if (!role) {
+      throw new Error('Missing role name');
+    }
+
+    const roleIx = (config.permissions[provider].roles || []).findIndex(
+      (r) => role && r.name && r.name.toLowerCase() === role.toLowerCase(),
+    );
+
+    const githubLogins = await this.promptUsers(
+      provider,
+      role,
+      ((((config.permissions[provider] || {}).roles || [])[roleIx] || {}).users || {}).github,
+    );
+
+    if (roleIx === -1) {
+      (config.permissions[provider].roles || []).push({
+        name: role,
+        users: { github: githubLogins },
+      });
+    } else {
+      ((((config.permissions[provider] || {}).roles || [])[roleIx] || {}).users || {}).github =
+        githubLogins;
+    }
+
+    return this.configHelper.promptConfigUpdate(
+      org,
+      repo,
+      config,
+      `${provider}: grant permissions to assume ${role}
 
 ${githubLogins.map((l) => `- ${l}`)}`,
       true,

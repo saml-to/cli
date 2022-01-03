@@ -6,12 +6,11 @@ import inquirer from 'inquirer';
 import { ui } from '../command';
 import { Show } from './show';
 import { load } from 'js-yaml';
-import { AwsHelper } from '../helpers/aws/awsHelper';
 import { CONFIG_FILE } from './init';
 import { ConfigHelper } from '../helpers/configHelper';
 import { OrgHelper } from '../helpers/orgHelper';
 import { GenericHelper } from '../helpers/genericHelper';
-import { AwsSsoHelper } from '../helpers/aws/awsSsoHelper';
+import { MessagesHelper } from '../helpers/messagesHelper';
 
 export type AddSubcommands = 'provider' | 'permission';
 
@@ -22,23 +21,17 @@ export type AddAttributes = { [key: string]: string };
 export class Add {
   show: Show;
 
-  awsHelper: AwsHelper;
-
-  awsSsoHelper: AwsSsoHelper;
-
   configHelper: ConfigHelper;
 
   orgHelper: OrgHelper;
 
   genericHelper: GenericHelper;
 
-  constructor() {
+  constructor(private messagesHelper: MessagesHelper) {
     this.show = new Show();
-    this.awsHelper = new AwsHelper();
-    this.awsSsoHelper = new AwsSsoHelper();
     this.configHelper = new ConfigHelper();
     this.orgHelper = new OrgHelper();
-    this.genericHelper = new GenericHelper();
+    this.genericHelper = new GenericHelper(messagesHelper);
   }
 
   public async handle(
@@ -49,6 +42,7 @@ export class Add {
     loginUrl?: string,
     nameId?: string,
     nameIdFormat?: AddNameIdFormats,
+    role?: string,
     attributes?: { [key: string]: string },
   ): Promise<void> {
     switch (subcommand) {
@@ -60,11 +54,11 @@ export class Add {
           loginUrl,
           nameId,
           nameIdFormat,
+          role,
           attributes,
         );
         if (added) {
-          console.log(`
-Provider has been added!`);
+          this.messagesHelper.providerAdded();
         }
         break;
       }
@@ -88,6 +82,7 @@ Permissions have been granted!`);
     loginUrl?: string,
     nameId?: string,
     nameIdFormat?: AddNameIdFormats,
+    role?: string,
     attributes?: { [key: string]: string },
   ): Promise<boolean> {
     const { org, repo } = await this.orgHelper.promptOrg('manage');
@@ -112,6 +107,7 @@ Permissions have been granted!`);
       loginUrl,
       nameId,
       nameIdFormat,
+      role,
       attributes,
     );
 
@@ -201,51 +197,21 @@ permissions:
       );
     }
 
-    if (permissions.roles) {
-      throw new Error(
-        `This utility doesn't currently support adding role assumption permissions. Please edit the configuration manually:
-
-permissions:
-  TheProviderName:
-    roles:
-      name: TheRoleName
-      users:
-        github:
-          - AGithubID
-`,
-      );
-    }
-
     let type: 'role-user' | 'sso-user';
     if (!permissions.roles && !permissions.users) {
-      type = (
-        await inquirer.prompt({
-          type: 'list',
-          name: 'type',
-          message: `Which type of permission would you like to add?`,
-          choices: [
-            { name: 'Role assumption', value: 'role-user' },
-            { name: 'Sign-in Permission', value: 'sso-user' },
-          ],
-        })
-      ).type;
-
-      if (type === 'role-user') {
-        throw new Error(
-          `This utility doesn't currently support adding role assumption permissions. Please edit the configuration manually:
-
-permissions:
-  TheProviderName:
-    roles:
-      name: TheRoleName
-      users:
-        github:
-          - AGithubID
-`,
-        );
+      type = await this.genericHelper.promptLoginType();
+    } else {
+      if (permissions.roles) {
+        type = 'role-user';
+      } else {
+        type = 'sso-user';
       }
     }
 
-    return this.genericHelper.promptPermissionV20220101(org, repo, providerKey, config);
+    if (type === 'role-user') {
+      return this.genericHelper.promptRolePermissionV20220101(org, repo, providerKey, config);
+    } else {
+      return this.genericHelper.promptPermissionV20220101(org, repo, providerKey, config);
+    }
   }
 }

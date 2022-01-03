@@ -34,7 +34,7 @@ export class Init {
   show: Show;
 
   constructor(private messagesHelper: MessagesHelper) {
-    this.githubHelper = new GithubHelper();
+    this.githubHelper = new GithubHelper(messagesHelper);
     this.scms = new Scms();
     this.show = new Show();
   }
@@ -54,14 +54,39 @@ export class Init {
     await this.assertOrg(org);
 
     ui.updateBottomBar('');
-    const { repo } = await inquirer.prompt({
-      type: 'input',
-      name: 'repo',
-      default: 'saml-to',
-      message: `Which Repository within ${org} would you like to use to store the \`${CONFIG_FILE}\` configuration file?
-(If it doesn't yet exist, we'll give you an option to create it!)
-`,
+    const { createMode } = await inquirer.prompt({
+      type: 'list',
+      name: 'createMode',
+      message: `Would you like to create a new repository for the \`${CONFIG_FILE}\` configuration file or use an existing repostiory?`,
+      choices: [
+        { name: 'Create a new repository', value: 'create' },
+        { name: 'Use an existing repository', value: 'existing' },
+      ],
     });
+
+    let repo: string;
+    if (createMode === 'create') {
+      ui.updateBottomBar('');
+      repo = (
+        await inquirer.prompt({
+          type: 'input',
+          name: 'repo',
+          default: 'saml-to',
+          message: `What would you like the new repository named?`,
+        })
+      ).repo;
+    } else {
+      ui.updateBottomBar('');
+      repo = (
+        await inquirer.prompt({
+          type: 'input',
+          name: 'repo',
+          default: 'saml-to',
+          message: `What pre-existing repository would you like to yuse to store the \`${CONFIG_FILE}\` configuration file?`,
+        })
+      ).repo;
+    }
+
     ui.updateBottomBar(`Checking access to ${org}/${repo}...`);
     await this.assertRepo(org, repo, 'repo');
     ui.updateBottomBar(`Registering ${org}/${repo}...`);
@@ -73,6 +98,12 @@ export class Init {
 
     ui.updateBottomBar('');
     console.log(`Repository \`${org}/${repo}\` registered!`);
+
+    this.messagesHelper.postInit(
+      org,
+      repo,
+      `https://github.com/${org}/${repo}/blob/main/${CONFIG_FILE}`,
+    );
   }
 
   private async assertOrg(org: string): Promise<'User' | 'Organization'> {

@@ -6,6 +6,7 @@ import log from 'loglevel';
 import { GITHUB_SCOPE_NEEDED } from '../messages';
 import { ui } from '../command';
 import { Octokit } from '@octokit/rest';
+import { MessagesHelper } from './messagesHelper';
 
 type DeviceCodeRequest = {
   client_id: string;
@@ -37,7 +38,7 @@ export type AccessTokenResponse = {
 export class GithubHelper {
   scms: Scms;
 
-  constructor() {
+  constructor(private messagesHelper: MessagesHelper) {
     this.scms = new Scms();
   }
 
@@ -57,13 +58,11 @@ export class GithubHelper {
 
     const { verification_uri: verificationUri, user_code: userCode } = response.data;
 
-    ui.updateBottomBar('');
-    console.log(`
-To continue, access to your GitHub profile (with scope \`${scope}\`) is needed...
-
-Please open the browser to ${verificationUri}, and enter the code:
+    this.messagesHelper.prelogin(scope, org);
+    this.messagesHelper.write(`Please open the browser to ${verificationUri}, and enter the code:
 
 ${userCode}
+
 `);
 
     const accessTokenResponse = await this.getAccessToken(
