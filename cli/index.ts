@@ -11,6 +11,7 @@ process.on('SIGINT', () => {
   try {
     log.debug('Starting CLI');
     const command = new Command('saml-to');
+    console.log(`!!! process.argv`, process.argv);
     await command.run(process.argv);
   } catch (e) {
     if (e instanceof Error) {

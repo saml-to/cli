@@ -16,6 +16,7 @@ import { ui } from '../command';
 import { RequestError } from '@octokit/request-error';
 import { dump } from 'js-yaml';
 import { Octokit } from '@octokit/rest';
+import { MessagesHelper } from '../helpers/messagesHelper';
 
 export const CONFIG_FILE = 'saml-to.yml';
 
@@ -32,26 +33,14 @@ export class Init {
 
   show: Show;
 
-  constructor() {
+  constructor(private messagesHelper: MessagesHelper) {
     this.githubHelper = new GithubHelper();
     this.scms = new Scms();
     this.show = new Show();
   }
 
   async handle(force = false): Promise<void> {
-    ui.updateBottomBar('');
-    console.log(`Welcome to SAML.to!
-
-SAML.to enables administrators to grant access to Service Providers to GitHub users.
-
-This utility will assist you in connecting a new or existing repository of your choice for configuration.
-
-SAML.to is configured by adding a \`${CONFIG_FILE}\` to any GitHub organization and repository which defines providers and access privleges.
-
-Once configured, you (or users in your organzation) will be able to login to services (and assume roles, if supported) using this utility or from the web.
-
-For more information, check out https://docs.saml.to
-`);
+    this.messagesHelper.introduction(CONFIG_FILE);
 
     ui.updateBottomBar('');
     const { org } = await inquirer.prompt({

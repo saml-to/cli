@@ -10,6 +10,7 @@ import { NoTokenError } from './stores/scms';
 import { GithubHelper } from './helpers/githubHelper';
 import { Add, AddAttributes, AddNameIdFormats, AddSubcommands } from './commands/add';
 import { Login } from './commands/login';
+import { MessagesHelper } from './helpers/messagesHelper';
 
 const loginWrapper = async (scope: string, fn: () => Promise<void>): Promise<void> => {
   try {
@@ -25,9 +26,11 @@ const loginWrapper = async (scope: string, fn: () => Promise<void>): Promise<voi
   }
 };
 
-export const ui = new inquirer.ui.BottomBar();
+export const ui = new inquirer.ui.BottomBar({ output: process.stderr });
 
 export class Command {
+  private messagesHelper: MessagesHelper;
+
   private assume: Assume;
 
   private login: Login;
@@ -41,9 +44,10 @@ export class Command {
   private set: Set;
 
   constructor(private name: string) {
+    this.messagesHelper = new MessagesHelper(name);
     this.assume = new Assume();
     this.login = new Login();
-    this.init = new Init();
+    this.init = new Init(this.messagesHelper);
     this.show = new Show();
     this.add = new Add();
     this.set = new Set();
