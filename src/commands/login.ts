@@ -10,6 +10,7 @@ import axios from 'axios';
 import open from 'open';
 import { Show } from './show';
 import { AwsHelper } from '../helpers/aws/awsHelper';
+import { GithubHelper } from '../helpers/githubHelper';
 import { ui } from '../command';
 import inquirer from 'inquirer';
 
@@ -20,10 +21,13 @@ export class Login {
 
   awsHelper: AwsHelper;
 
+  githubHelper: GithubHelper;
+
   constructor() {
     this.scms = new Scms();
     this.show = new Show();
     this.awsHelper = new AwsHelper();
+    this.githubHelper = new GithubHelper();
   }
 
   async handle(provider?: string, org?: string): Promise<void> {
@@ -86,10 +90,18 @@ export class Login {
       type: 'list',
       name: 'loginIx',
       message: `For which provider would you like to log in?`,
-      choices: logins.map((l, ix) => {
-        return { name: `${l.provider} (${l.org})`, value: ix };
-      }),
+      choices: [
+        ...logins.map((l, ix) => {
+          return { name: `${l.provider} (${l.org})`, value: ix };
+        }),
+        { name: '[New GitHub Identity]', value: '**GH_IDENTITY**' },
+      ],
     });
+
+    if (loginIx === '**GH_IDENTITY**') {
+      await this.githubHelper.promptLogin('user:email', org);
+      return this.promptLogin(org);
+    }
 
     return logins[loginIx];
   }
