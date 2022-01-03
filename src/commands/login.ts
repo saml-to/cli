@@ -33,7 +33,12 @@ export class Login {
       org = choice.org;
     }
 
-    ui.updateBottomBar(`Logging into ${provider} (org: ${org})`);
+    let message = `Logging into ${provider}`;
+    if (org) {
+      message = `${message} (org: ${org})`;
+    }
+
+    ui.updateBottomBar(message);
 
     const token = this.scms.getGithubToken();
     if (!token) {
