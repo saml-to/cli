@@ -5,6 +5,7 @@ import { Scms } from '../stores/scms';
 import { ui } from '../command';
 import { CONFIG_FILE } from '../commands/init';
 import { IDPApi, Configuration } from '../../api/github-sls-rest-api';
+import { event } from './events';
 
 export class ConfigHelper {
   scms: Scms;
@@ -54,6 +55,8 @@ ${configYaml}
     title: string,
     print = true,
   ): Promise<boolean> {
+    event(this.scms, 'fn:promptConfigUpdate', undefined, org);
+
     const configYaml = this.dumpConfig(org, repo, config, print);
 
     ui.updateBottomBar('');
@@ -92,6 +95,8 @@ ${configYaml}
     configYaml: string,
     title: string,
   ): Promise<void> {
+    event(this.scms, 'fn:commitConfig', undefined, org);
+
     ui.updateBottomBar(`Updating ${CONFIG_FILE} on ${org}/${repo}`);
     const { github } = await this.scms.loadClients();
     if (!github) {

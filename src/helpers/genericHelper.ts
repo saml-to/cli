@@ -12,6 +12,7 @@ import { AddNameIdFormats } from '../commands/add';
 import { Show } from '../commands/show';
 import { MessagesHelper } from './messagesHelper';
 import { CONFIG_FILE } from '../commands/init';
+import { event } from './events';
 
 export const trainCase = (str: string): string => {
   if (!str) {
@@ -93,6 +94,8 @@ export class GenericHelper {
     role?: string,
     attributes?: { [key: string]: string },
   ): Promise<boolean> {
+    event(this.scms, 'fn:promptProvider', config.version, org);
+
     ui.updateBottomBar('');
     if (!name) {
       name = (
@@ -323,6 +326,8 @@ export class GenericHelper {
     provider: string,
     config: GithubSlsRestApiConfigV20220101,
   ): Promise<boolean> {
+    event(this.scms, 'fn:promptPermissionV20220101', config.version);
+
     config.permissions = config.permissions || {};
     config.permissions[provider] = config.permissions[provider] || {};
     config.permissions[provider].users = config.permissions[provider].users || {};
@@ -356,6 +361,8 @@ ${githubLogins.map((l) => `- ${l}`)}`,
     config: GithubSlsRestApiConfigV20220101,
     role?: string,
   ): Promise<boolean> {
+    event(this.scms, 'fn"promptRolePermissionV20220101', config.version);
+
     config.permissions = config.permissions || {};
     config.permissions[provider] = config.permissions[provider] || {};
     config.permissions[provider].roles = config.permissions[provider].roles || [];

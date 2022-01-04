@@ -6,6 +6,7 @@ import {
   Configuration,
 } from '../../api/github-sls-rest-api';
 import { Scms } from '../stores/scms';
+import { event } from './events';
 
 export class OrgHelper {
   scms: Scms;
@@ -28,6 +29,8 @@ export class OrgHelper {
   async promptOrg(
     operation: 'view' | 'manage' | 'log in' | 'assume',
   ): Promise<GithubSlsRestApiOrgRepoResponse> {
+    event(this.scms, 'fn:promptOrg', operation);
+
     const orgs = await this.fetchOrgs();
     if (!orgs.length) {
       throw new Error(`Please run the \`init\` command first`);

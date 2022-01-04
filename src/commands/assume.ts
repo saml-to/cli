@@ -18,6 +18,7 @@ import inquirer from 'inquirer';
 import { ui } from '../command';
 import { AwsHelper } from '../helpers/aws/awsHelper';
 import { MessagesHelper } from '../helpers/messagesHelper';
+import { event } from '../helpers/events';
 
 export class Assume {
   scms: Scms;
@@ -33,6 +34,8 @@ export class Assume {
   }
 
   async handle(role?: string, headless = false, org?: string, provider?: string): Promise<void> {
+    event(this.scms, 'assume', undefined, org);
+
     if (!role && !headless) {
       const choice = await this.promptRole(org, provider);
       role = choice.role;

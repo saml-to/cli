@@ -11,6 +11,8 @@ import { ConfigHelper } from '../helpers/configHelper';
 import { OrgHelper } from '../helpers/orgHelper';
 import { GenericHelper } from '../helpers/genericHelper';
 import { MessagesHelper } from '../helpers/messagesHelper';
+import { event } from '../helpers/events';
+import { Scms } from '../stores/scms';
 
 export type AddSubcommands = 'provider' | 'permission';
 
@@ -21,6 +23,8 @@ export type AddAttributes = { [key: string]: string };
 export class Add {
   show: Show;
 
+  scms: Scms;
+
   configHelper: ConfigHelper;
 
   orgHelper: OrgHelper;
@@ -29,6 +33,7 @@ export class Add {
 
   constructor(private messagesHelper: MessagesHelper) {
     this.show = new Show();
+    this.scms = new Scms();
     this.configHelper = new ConfigHelper();
     this.orgHelper = new OrgHelper();
     this.genericHelper = new GenericHelper(messagesHelper);
@@ -45,6 +50,8 @@ export class Add {
     role?: string,
     attributes?: { [key: string]: string },
   ): Promise<void> {
+    event(this.scms, 'add', subcommand);
+
     switch (subcommand) {
       case 'provider': {
         const added = await this.addProvider(

@@ -14,6 +14,7 @@ import { GithubHelper } from '../helpers/githubHelper';
 import { ui } from '../command';
 import inquirer from 'inquirer';
 import { MessagesHelper } from '../helpers/messagesHelper';
+import { event } from '../helpers/events';
 
 export class Login {
   scms: Scms;
@@ -32,6 +33,8 @@ export class Login {
   }
 
   async handle(provider?: string, org?: string): Promise<void> {
+    event(this.scms, 'login', undefined, org);
+
     if (!provider) {
       const choice = await this.promptLogin(org);
       provider = choice.provider;

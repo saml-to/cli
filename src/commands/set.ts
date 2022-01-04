@@ -8,6 +8,7 @@ import { ConfigHelper } from '../helpers/configHelper';
 import { ui } from '../command';
 import { OrgHelper } from '../helpers/orgHelper';
 import { Scms } from '../stores/scms';
+import { event } from '../helpers/events';
 
 export type SetSubcommands = 'provisioning';
 
@@ -37,6 +38,8 @@ export class Set {
     provider: string,
     opts: SetHandleOpts,
   ): Promise<void> => {
+    event(this.scms, 'set', subcommand);
+
     switch (subcommand) {
       case 'provisioning': {
         await this.promptProvisioning(provider, opts);

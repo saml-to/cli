@@ -7,6 +7,7 @@ import { GITHUB_SCOPE_NEEDED } from '../messages';
 import { ui } from '../command';
 import { Octokit } from '@octokit/rest';
 import { MessagesHelper } from './messagesHelper';
+import { event } from './events';
 
 type DeviceCodeRequest = {
   client_id: string;
@@ -43,6 +44,8 @@ export class GithubHelper {
   }
 
   async promptLogin(scope = 'user:email', org?: string): Promise<void> {
+    event(this.scms, 'fn:promptLogin', scope, org);
+
     const api = new JwtGithubApi();
     const { data: oauthDetail } = await api.getOauthDetail();
     const { clientId } = oauthDetail;

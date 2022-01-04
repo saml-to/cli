@@ -17,6 +17,7 @@ import { RequestError } from '@octokit/request-error';
 import { dump } from 'js-yaml';
 import { Octokit } from '@octokit/rest';
 import { MessagesHelper } from '../helpers/messagesHelper';
+import { event } from '../helpers/events';
 
 export const CONFIG_FILE = 'saml-to.yml';
 
@@ -40,6 +41,8 @@ export class Init {
   }
 
   async handle(force = false): Promise<void> {
+    event(this.scms, 'init');
+
     this.messagesHelper.introduction(CONFIG_FILE);
 
     ui.updateBottomBar('');
@@ -53,6 +56,7 @@ export class Init {
     ui.updateBottomBar(`Checking if ${org} exists...`);
     await this.assertOrg(org);
 
+    event(this.scms, 'init', undefined, org);
     ui.updateBottomBar('');
     const { createMode } = await inquirer.prompt({
       type: 'list',

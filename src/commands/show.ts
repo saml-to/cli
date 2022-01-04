@@ -11,6 +11,7 @@ import path from 'path';
 import { ui } from '../command';
 import { ConfigHelper } from '../helpers/configHelper';
 import { OrgHelper } from '../helpers/orgHelper';
+import { event } from '../helpers/events';
 
 export type ShowSubcommands =
   | 'metadata'
@@ -48,14 +49,17 @@ export class Show {
   ): Promise<void> {
     switch (subcommand) {
       case 'orgs': {
+        event(this.scms, 'show', subcommand, org);
         await this.showOrgs(save);
         return;
       }
       case 'roles': {
+        event(this.scms, 'show', subcommand, org);
         await this.showRoles(org, provider, refresh, save);
         return;
       }
       case 'logins': {
+        event(this.scms, 'show', subcommand, org);
         await this.showLogins(org, refresh, save);
         return;
       }
@@ -70,6 +74,8 @@ export class Show {
         throw new Error(NO_ORG);
       }
     }
+
+    event(this.scms, 'show', subcommand, org);
 
     switch (subcommand) {
       case 'metadata': {

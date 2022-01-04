@@ -89,6 +89,14 @@ Please [Open a New Issue](https://github.com/saml-to/cli/issues/new/choose) in G
 - [Scaffoldly](https://github.com/scaffoldly)
 - [cnuss](https://github.com/cnuss)
 
+## Usage Metrics Opt-Out
+
+If you do not want to be included in Anonymous Usage Metrics, ensure an environment variable named `SAML_TO_DNT` is set:
+
+```bash
+SAML_TO_DNT=1 npx saml-to
+```
+
 ## License
 
 [Apache-2.0 License](LICENSE)
