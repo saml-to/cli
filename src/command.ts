@@ -189,10 +189,6 @@ export class Command {
           await this.init.handle(force as boolean | undefined);
         },
         builder: {
-          repoUrl: {
-            demand: false,
-            type: 'string',
-          },
           force: {
             demand: false,
             type: 'boolean',
