@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Assume } from './commands/assume';
 import { Init } from './commands/init';
 import { Show, ShowSubcommands } from './commands/show';
-import { ProvisioningTypes, Set, SetSubcommands } from './commands/set';
+import { ProvisioningTypes, Set, SetHandleOpts, SetSubcommands } from './commands/set';
 import inquirer from 'inquirer';
 import { NoTokenError } from './stores/scms';
 import { GithubHelper } from './helpers/githubHelper';
@@ -297,11 +297,15 @@ export class Command {
         describe: '(Administrative) Set a provider setting (e.g. provisioning',
         handler: async ({ name, subcommand, type, endpoint, token }) => {
           await loginWrapper(this.messagesHelper, 'repo', () =>
-            this.set.handle(subcommand as SetSubcommands, name as string, {
-              type: type as ProvisioningTypes,
-              endpoint: endpoint as string,
-              token: token as string,
-            }),
+            this.set.handle(
+              subcommand as SetSubcommands,
+              name as string,
+              {
+                type: type as ProvisioningTypes | undefined,
+                endpoint: endpoint as string | undefined,
+                token: token as string | undefined,
+              } as SetHandleOpts,
+            ),
           );
         },
         builder: {
@@ -315,16 +319,16 @@ export class Command {
             choices: ['provisioning'] as SetSubcommands[],
           },
           type: {
-            demand: true,
+            demand: false,
             type: 'string',
             choices: ['scim'] as ProvisioningTypes[],
           },
           endpoint: {
-            demand: true,
+            demand: false,
             type: 'string',
           },
           token: {
-            demand: true,
+            demand: false,
             type: 'string',
           },
         },
