@@ -54,6 +54,7 @@ export class Set {
   private promptProvisioning = async (provider: string, opts: SetHandleOpts): Promise<boolean> => {
     let { type } = opts;
     if (!type) {
+      ui.updateBottomBar('');
       type = (
         await inquirer.prompt({
           type: 'list',
@@ -124,6 +125,7 @@ export class Set {
     token?: string,
   ): Promise<boolean> => {
     if (!endpoint) {
+      ui.updateBottomBar('');
       endpoint = (
         await inquirer.prompt({
           type: 'input',
@@ -134,6 +136,7 @@ export class Set {
     }
 
     if (!token) {
+      ui.updateBottomBar('');
       token = (
         await inquirer.prompt({
           type: 'password',
