@@ -100,10 +100,11 @@ GitHub is now configured as an Identity Provider using \`${org}/${repo}\`.
 The confiruration file can be found here:
   ${configFileUrl}
 
-Service Providers will need your SAML Metadata, Certificicate or Login URL available with the following commands:
- - \`${this.processName} show entityId\` 
- - \`${this.processName} show certificate\`
- - \`${this.processName} show loginUrl\` (Useful if asked for the 'SAML Endpoint')
+Service Providers will need your SAML Metadata, Certificicate, Entity ID or Login URL available with the following commands:
+- \`${this.processName} show metadata\` (aka 'IdP Metadata')
+- \`${this.processName} show certificate\` (aka 'IdP Certificate')
+- \`${this.processName} show entityId\` (aka 'IdP Issuer URL', 'IdP Entity ID')
+- \`${this.processName} show loginUrl\` (aka 'IdP Sign-In URL', 'SAML 2.0 Endpoint')
 
 Then to add a Service Provider, run the following command and follow the interactive prompts:
  - \`${this.processName} add provider\`
@@ -129,6 +130,12 @@ For more information, check out https://docs.saml.to/troubleshooting/administrat
     }
     this.write(`
 Provider \`${this.context.provider}\` has been added!
+
+If you haven't already, update the Service Provider with your configuration:
+- \`${this.processName} show metadata\` (aka 'IdP Metadata')
+- \`${this.processName} show certificate\` (aka 'IdP Certificate')
+- \`${this.processName} show entityId\` (aka 'IdP Issuer URL', 'IdP Entity ID')
+- \`${this.processName} show loginUrl\` (aka 'IdP Sign-In URL', 'SAML Endpoint')
 
 Additional permissions may be added anytime with the following command:
  - \`${this.processName} add permission\`
