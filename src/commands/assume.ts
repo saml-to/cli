@@ -27,7 +27,7 @@ export class Assume {
 
   awsHelper: AwsHelper;
 
-  constructor(messagesHelper: MessagesHelper) {
+  constructor(private messagesHelper: MessagesHelper) {
     this.scms = new Scms();
     this.show = new Show();
     this.awsHelper = new AwsHelper(messagesHelper);
@@ -103,6 +103,11 @@ export class Assume {
 
   async promptRole(org?: string, provider?: string): Promise<GithubSlsRestApiRoleResponse> {
     const roles = await this.show.fetchRoles(org, provider);
+
+    if (roles.length === 0) {
+      this.messagesHelper.getSetup('roles available to assume');
+      throw new Error('No roles are available to assume');
+    }
 
     ui.updateBottomBar('');
     const { roleIx } = await inquirer.prompt({

@@ -121,6 +121,19 @@ For more information, check out https://docs.saml.to/troubleshooting/administrat
 `);
   }
 
+  getSetup(context: 'roles available to assume' | 'logins configured'): void {
+    this.write(`
+You have no ${context}!
+
+You can set up by running:
+\`${this.processName} init\`
+
+For more information on getting started, visit
+ - https://saml.to
+ - https://docs.saml.to
+`);
+  }
+
   providerAdded(): void {
     if (!this.context.provider) {
       throw new Error('Missing provider context');

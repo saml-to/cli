@@ -25,7 +25,7 @@ export class Login {
 
   githubHelper: GithubHelper;
 
-  constructor(messagesHelper: MessagesHelper) {
+  constructor(private messagesHelper: MessagesHelper) {
     this.scms = new Scms();
     this.show = new Show();
     this.awsHelper = new AwsHelper(messagesHelper);
@@ -88,6 +88,11 @@ export class Login {
 
   async promptLogin(org?: string): Promise<GithubSlsRestApiLoginResponse> {
     const logins = await this.show.fetchLogins(org);
+
+    if (logins.length === 0) {
+      this.messagesHelper.getSetup('logins configured');
+      throw new Error('No logins are available');
+    }
 
     ui.updateBottomBar('');
     const { loginIx } = await inquirer.prompt({
