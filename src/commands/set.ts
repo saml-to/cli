@@ -9,6 +9,7 @@ import { ui } from '../command';
 import { OrgHelper } from '../helpers/orgHelper';
 import { Scms } from '../stores/scms';
 import { event } from '../helpers/events';
+import inquirer from 'inquirer';
 
 export type SetSubcommands = 'provisioning';
 
@@ -51,9 +52,16 @@ export class Set {
   };
 
   private promptProvisioning = async (provider: string, opts: SetHandleOpts): Promise<boolean> => {
-    const { type } = opts;
+    let { type } = opts;
     if (!type) {
-      throw new Error(`Missing provisioning type`);
+      type = (
+        await inquirer.prompt({
+          type: 'list',
+          name: 'type',
+          message: `What is the type of Provisioning?`,
+          choices: [{ name: 'SCIM', value: 'scim' }],
+        })
+      ).type;
     }
 
     switch (type) {
@@ -115,9 +123,24 @@ export class Set {
     endpoint?: string,
     token?: string,
   ): Promise<boolean> => {
-    if (!endpoint || !token) {
-      // TODO: prompt for them!
-      throw new Error(`Missing endpoint or token`);
+    if (!endpoint) {
+      endpoint = (
+        await inquirer.prompt({
+          type: 'input',
+          name: 'endpoint',
+          message: 'What is the SCIM endpoint?',
+        })
+      ).endpoint as string;
+    }
+
+    if (!token) {
+      token = (
+        await inquirer.prompt({
+          type: 'password',
+          name: 'token',
+          message: 'What is the SCIM token (we will encrypt it for you!)?',
+        })
+      ).token as string;
     }
 
     const { providers } = config;

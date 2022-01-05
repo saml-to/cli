@@ -137,6 +137,9 @@ If you haven't already, update the Service Provider with your configuration:
 - \`${this.processName} show entityId\` (aka 'IdP Issuer URL', 'IdP Entity ID')
 - \`${this.processName} show loginUrl\` (aka 'IdP Sign-In URL', 'SAML Endpoint')
 
+If you need to enable SCIM provisioning at the provider:
+- \`${this.processName} set provisioning ${this.context.provider}\`
+
 Additional permissions may be added anytime with the following command:
  - \`${this.processName} add permission\`
 
