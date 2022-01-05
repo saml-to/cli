@@ -294,7 +294,7 @@ export class Command {
       })
       .command({
         command: 'set [name] [subcommand]',
-        describe: '(Administrative) Set a provider setting (e.g. provisioning',
+        describe: '(Administrative) Set a provider setting (e.g. provisioning)',
         handler: async ({ name, subcommand, type, endpoint, token }) => {
           await loginWrapper(this.messagesHelper, 'repo', () =>
             this.set.handle(
