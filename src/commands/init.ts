@@ -49,7 +49,7 @@ export class Init {
     const { org } = await inquirer.prompt({
       type: 'input',
       name: 'org',
-      message: `Which GitHub User or Organiztion would you like to use?
+      message: `Which GitHub User or Organization would you like to use?
 `,
     });
 
