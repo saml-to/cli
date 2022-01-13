@@ -17,5 +17,4 @@ process.on('SIGINT', () => {
     }
     throw e;
   }
-  process.exit(0);
 })();
