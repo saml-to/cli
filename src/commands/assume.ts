@@ -86,6 +86,8 @@ export class Assume {
 
   private async assumeBrowser(samlResponse: GithubSlsRestApiSamlResponseContainer): Promise<void> {
     if (samlResponse.browserUri) {
+      ui.updateBottomBar('');
+      console.log(`Opening browser to ${new URL(samlResponse.browserUri).origin}`);
       await open(samlResponse.browserUri);
     } else {
       throw new Error(`Browser URI is not set.`);
