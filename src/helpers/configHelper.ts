@@ -1,8 +1,7 @@
-import inquirer from 'inquirer';
 import { dump } from 'js-yaml';
 import { NO_GITHUB_CLIENT } from '../messages';
 import { Scms } from '../stores/scms';
-import { ui } from '../command';
+import { prompt, ui } from '../command';
 import { CONFIG_FILE } from '../commands/init';
 import { IDPApi, Configuration } from '../../api/github-sls-rest-api';
 import { event } from './events';
@@ -60,7 +59,7 @@ ${configYaml}
     const configYaml = this.dumpConfig(org, repo, config, print);
 
     ui.updateBottomBar('');
-    const { type } = await inquirer.prompt({
+    const { type } = await prompt('type', {
       type: 'list',
       name: 'type',
       message: `Would you like to push this configuration change to \`${org}/${repo}\`?`,

@@ -1,5 +1,4 @@
-import inquirer from 'inquirer';
-import { ui } from '../command';
+import { prompt, ui } from '../command';
 import {
   GithubSlsRestApiOrgRepoResponse,
   IDPApi,
@@ -41,7 +40,7 @@ export class OrgHelper {
     }
 
     ui.updateBottomBar('');
-    const { orgIx } = await inquirer.prompt({
+    const { orgIx } = await prompt('org', {
       type: 'list',
       name: 'orgIx',
       message: `For which organization would you like to ${operation}?`,

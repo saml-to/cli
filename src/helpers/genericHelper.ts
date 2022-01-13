@@ -4,8 +4,7 @@ import {
   GithubSlsRestApiProviderV1,
   GithubSlsRestApiNameIdFormatV1,
 } from '../../api/github-sls-rest-api';
-import inquirer from 'inquirer';
-import { ui } from '../command';
+import { prompt, ui } from '../command';
 import { ConfigHelper } from './configHelper';
 import { Scms } from '../stores/scms';
 import { AddNameIdFormats } from '../commands/add';
@@ -44,7 +43,7 @@ export class GenericHelper {
   public async promptUsers(provider: string, role?: string, users?: string[]): Promise<string[]> {
     if (!users) {
       ui.updateBottomBar('');
-      const { addSelf } = await inquirer.prompt({
+      const { addSelf } = await prompt('addSelf', {
         type: 'confirm',
         name: 'addSelf',
         message: `Would you like to grant yourself access to ${
@@ -62,7 +61,7 @@ export class GenericHelper {
     }
 
     ui.updateBottomBar('');
-    const { user } = await inquirer.prompt({
+    const { user } = await prompt('user', {
       type: 'input',
       name: 'user',
       message: `What is another Github ID of the user that will be allowed to ${
@@ -99,7 +98,7 @@ export class GenericHelper {
     ui.updateBottomBar('');
     if (!name) {
       name = (
-        await inquirer.prompt({
+        await prompt('name', {
           type: 'input',
           name: 'name',
           message: `What is the name of the provider (e.g. AWS, Slack, Google)?`,
@@ -160,7 +159,7 @@ export class GenericHelper {
     ui.updateBottomBar('');
     if (!entityId) {
       entityId = (
-        await inquirer.prompt({
+        await prompt('entityId', {
           type: 'input',
           name: 'entityId',
           message: `What is the Entity ID for ${name}?`,
@@ -170,7 +169,7 @@ export class GenericHelper {
 
     if (!acsUrl) {
       acsUrl = (
-        await inquirer.prompt({
+        await prompt('acsUrl', {
           type: 'input',
           name: 'acsUrl',
           message: `What is the Assertion Consumer Service (ACS) URL for ${name}?`,
@@ -179,7 +178,7 @@ export class GenericHelper {
     }
 
     if (!loginUrl && loginUrl !== 'NONE') {
-      const { initiation } = await inquirer.prompt({
+      const { initiation } = await prompt('initiation', {
         type: 'list',
         name: 'initiation',
         message: `How are SAML login requests initiated?`,
@@ -204,7 +203,7 @@ export class GenericHelper {
         this.messagesHelper.unknownInitiation(name, CONFIG_FILE);
       } else if (initiation === 'sp') {
         loginUrl = (
-          await inquirer.prompt({
+          await prompt('loginUrl', {
             type: 'input',
             name: 'loginUrl',
             message: `What is the Login URL for ${name}?`,
@@ -219,7 +218,7 @@ export class GenericHelper {
 
     if (!nameIdFormat) {
       nameIdFormat = (
-        await inquirer.prompt({
+        await prompt('nameIdFormat', {
           type: 'list',
           name: 'nameIdFormat',
           message: `(Optional) Does the provider need Name IDs in a particular format?
@@ -269,7 +268,7 @@ export class GenericHelper {
 
     this.configHelper.dumpConfig(org, repo, config, true);
 
-    const { addPermissions } = await inquirer.prompt({
+    const { addPermissions } = await prompt('addPermissions', {
       type: 'confirm',
       name: 'addPermissions',
       message: `Would you like to grant any permissions to GitHub users now?`,
@@ -305,7 +304,7 @@ export class GenericHelper {
   public async promptLoginType(): Promise<'role-user' | 'sso-user'> {
     let type: 'role-user' | 'sso-user' = 'sso-user';
     type = (
-      await inquirer.prompt({
+      await prompt('type', {
         type: 'list',
         name: 'type',
         message: `Which type of permission would you like to add?`,
@@ -370,7 +369,7 @@ ${githubLogins.map((l) => `- ${l}`)}`,
     ui.updateBottomBar('');
     if (!role) {
       role = (
-        await inquirer.prompt({
+        await prompt('role', {
           type: 'list',
           name: 'roleName',
           message: `What is the name of the role you would like to allow for assumption?`,
@@ -382,7 +381,7 @@ ${githubLogins.map((l) => `- ${l}`)}`,
       ).roleName;
 
       if (!role) {
-        const { input } = await inquirer.prompt({
+        const { input } = await prompt('roleName', {
           type: 'input',
           name: 'input',
           message: `What is name of the new role?
@@ -454,7 +453,7 @@ ${githubLogins.map((l) => `- ${l}`)}`,
     variables: { [key: string]: GithubSlsRestApiVariableV1 },
     attributes: { [key: string]: string } = {},
   ): Promise<{ [key: string]: string }> {
-    const { attributeName } = await inquirer.prompt({
+    const { attributeName } = await prompt('attributeName', {
       type: 'input',
       name: 'attributeName',
       message: `What is the name of an attribute should be sent to the Provider? (Leave blank if finished adding attributes)
@@ -465,7 +464,7 @@ ${githubLogins.map((l) => `- ${l}`)}`,
       return attributes;
     }
 
-    let { attributeValue } = await inquirer.prompt({
+    let { attributeValue } = await prompt('attributeValue', {
       type: 'list',
       name: 'attributeValue',
       message: `What should be the value of \`${attributeName}\`?
@@ -511,7 +510,7 @@ ${githubLogins.map((l) => `- ${l}`)}`,
     });
 
     if (attributeValue === '*_*_*_OTHER_*_*_*') {
-      const { customValue } = await inquirer.prompt({
+      const { customValue } = await prompt('custonValue', {
         type: 'input',
         name: 'customValue',
         message: `What is the custom value of ${attributeName}?

@@ -5,12 +5,13 @@ import { Assume } from './commands/assume';
 import { Init } from './commands/init';
 import { Show, ShowSubcommands } from './commands/show';
 import { ProvisioningTypes, Set, SetHandleOpts, SetSubcommands } from './commands/set';
-import inquirer from 'inquirer';
+import inquirer, { QuestionCollection } from 'inquirer';
 import { NoTokenError } from './stores/scms';
 import { GithubHelper } from './helpers/githubHelper';
 import { Add, AddAttributes, AddNameIdFormats, AddSubcommands } from './commands/add';
 import { Login } from './commands/login';
 import { MessagesHelper } from './helpers/messagesHelper';
+import PromptUI from 'inquirer/lib/ui/prompt';
 
 const loginWrapper = async (
   messagesHelper: MessagesHelper,
@@ -31,6 +32,17 @@ const loginWrapper = async (
 };
 
 export const ui = new inquirer.ui.BottomBar({ output: process.stderr });
+
+export const prompt = <T>(
+  field: string,
+  questions: QuestionCollection<T>,
+  initialAnswers?: Partial<T>,
+): Promise<T> & { ui: PromptUI } => {
+  if (!process.stdin.isTTY) {
+    throw new Error(`TTY is disabled. Please provide \`${field}\` as a command line argument`);
+  }
+  return inquirer.prompt(questions, initialAnswers);
+};
 
 export class Command {
   private messagesHelper: MessagesHelper;

@@ -5,11 +5,10 @@ import {
 } from '../../api/github-sls-rest-api';
 import { load } from 'js-yaml';
 import { ConfigHelper } from '../helpers/configHelper';
-import { ui } from '../command';
+import { prompt, ui } from '../command';
 import { OrgHelper } from '../helpers/orgHelper';
 import { Scms } from '../stores/scms';
 import { event } from '../helpers/events';
-import inquirer from 'inquirer';
 
 export type SetSubcommands = 'provisioning';
 
@@ -56,7 +55,7 @@ export class Set {
     if (!type) {
       ui.updateBottomBar('');
       type = (
-        await inquirer.prompt({
+        await prompt('type', {
           type: 'list',
           name: 'type',
           message: `What is the type of Provisioning?`,
@@ -127,7 +126,7 @@ export class Set {
     if (!endpoint) {
       ui.updateBottomBar('');
       endpoint = (
-        await inquirer.prompt({
+        await prompt('endpoint', {
           type: 'input',
           name: 'endpoint',
           message: 'What is the SCIM endpoint?',
@@ -138,7 +137,7 @@ export class Set {
     if (!token) {
       ui.updateBottomBar('');
       token = (
-        await inquirer.prompt({
+        await prompt('token', {
           type: 'password',
           name: 'token',
           message: 'What is the SCIM token (we will encrypt it for you!)?',

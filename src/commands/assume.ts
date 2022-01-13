@@ -14,8 +14,7 @@ import { Scms } from '../stores/scms';
 import axios from 'axios';
 import open from 'open';
 import { Show } from './show';
-import inquirer from 'inquirer';
-import { ui } from '../command';
+import { prompt, ui } from '../command';
 import { AwsHelper } from '../helpers/aws/awsHelper';
 import { MessagesHelper } from '../helpers/messagesHelper';
 import { event } from '../helpers/events';
@@ -110,7 +109,7 @@ export class Assume {
     }
 
     ui.updateBottomBar('');
-    const { roleIx } = await inquirer.prompt({
+    const { roleIx } = await prompt('role', {
       type: 'list',
       name: 'roleIx',
       message: `Which role would you like to assume?`,

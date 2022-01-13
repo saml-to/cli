@@ -11,8 +11,7 @@ import open from 'open';
 import { Show } from './show';
 import { AwsHelper } from '../helpers/aws/awsHelper';
 import { GithubHelper } from '../helpers/githubHelper';
-import { ui } from '../command';
-import inquirer from 'inquirer';
+import { prompt, ui } from '../command';
 import { MessagesHelper } from '../helpers/messagesHelper';
 import { event } from '../helpers/events';
 
@@ -95,7 +94,7 @@ export class Login {
     }
 
     ui.updateBottomBar('');
-    const { loginIx } = await inquirer.prompt({
+    const { loginIx } = await prompt('provider', {
       type: 'list',
       name: 'loginIx',
       message: `For which provider would you like to log in?`,

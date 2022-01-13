@@ -3,7 +3,6 @@
 import log from 'loglevel';
 import { GITHUB_ACCESS_NEEDED, REPO_DOES_NOT_EXIST } from '../messages';
 import { GithubHelper } from '../helpers/githubHelper';
-import inquirer from 'inquirer';
 import {
   IDPApi,
   Configuration,
@@ -12,7 +11,7 @@ import {
 } from '../../api/github-sls-rest-api';
 import { Scms } from '../stores/scms';
 import { Show } from './show';
-import { ui } from '../command';
+import { prompt, ui } from '../command';
 import { RequestError } from '@octokit/request-error';
 import { dump } from 'js-yaml';
 import { Octokit } from '@octokit/rest';
@@ -46,7 +45,7 @@ export class Init {
     this.messagesHelper.introduction(CONFIG_FILE);
 
     ui.updateBottomBar('');
-    const { org } = await inquirer.prompt({
+    const { org } = await prompt('org', {
       type: 'input',
       name: 'org',
       message: `Which GitHub User or Organization would you like to use?
@@ -58,7 +57,7 @@ export class Init {
 
     event(this.scms, 'init', undefined, org);
     ui.updateBottomBar('');
-    const { createMode } = await inquirer.prompt({
+    const { createMode } = await prompt('createMode', {
       type: 'list',
       name: 'createMode',
       message: `Would you like to create a new repository for the \`${CONFIG_FILE}\` configuration file or use an existing repostiory?`,
@@ -72,7 +71,7 @@ export class Init {
     if (createMode === 'create') {
       ui.updateBottomBar('');
       repo = (
-        await inquirer.prompt({
+        await prompt('repo', {
           type: 'input',
           name: 'repo',
           default: 'saml-to',
@@ -82,7 +81,7 @@ export class Init {
     } else {
       ui.updateBottomBar('');
       repo = (
-        await inquirer.prompt({
+        await prompt('repo', {
           type: 'input',
           name: 'repo',
           default: 'saml-to',
@@ -162,7 +161,7 @@ export class Init {
       const { data: repository } = await github.repos.get({ owner: org, repo });
       if (repository.visibility === 'public') {
         ui.updateBottomBar('');
-        const { makePrivate } = await inquirer.prompt({
+        const { makePrivate } = await prompt('makePrivate', {
           type: 'confirm',
           name: 'makePrivate',
           message: `\`${org}/${repo}\` appears to be a Public Repository. It's recommended to keep it private. Would you like to convert it to a private repository?`,
@@ -176,7 +175,7 @@ export class Init {
     } catch (e) {
       if (e instanceof Error) {
         ui.updateBottomBar('');
-        const { createRepo } = await inquirer.prompt({
+        const { createRepo } = await prompt('createRepo', {
           type: 'confirm',
           name: 'createRepo',
           message: `It appears that \`${org}/${repo}\` does not exist yet, do you want to create it?`,
@@ -202,7 +201,7 @@ export class Init {
     } catch (e) {
       if (e instanceof RequestError && e.status === 404) {
         ui.updateBottomBar('');
-        const { createConfig } = await inquirer.prompt({
+        const { createConfig } = await prompt('createConfig', {
           type: 'confirm',
           name: 'createConfig',
           message: `It appears that \`${org}/${repo}\` does not contain \`${CONFIG_FILE}\` yet. Would you like to create an empty config file?`,

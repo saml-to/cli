@@ -2,8 +2,7 @@ import {
   GithubSlsRestApiConfigV20220101,
   GithubSlsRestApiNameIdFormatV1,
 } from '../../api/github-sls-rest-api';
-import inquirer from 'inquirer';
-import { ui } from '../command';
+import { prompt, ui } from '../command';
 import { Show } from './show';
 import { load } from 'js-yaml';
 import { CONFIG_FILE } from './init';
@@ -175,7 +174,7 @@ Permissions have been granted!`);
 
     ui.updateBottomBar('');
     const providerKey: string = (
-      await inquirer.prompt({
+      await prompt('provider', {
         type: 'list',
         name: 'providerKey',
         message: `For which provider would you like to grant user permission?`,

@@ -4,8 +4,7 @@ import {
   GithubSlsRestApiSamlResponseContainer,
   GithubSlsRestApiAwsAssumeSdkOptions,
 } from '../../../api/github-sls-rest-api';
-import inquirer from 'inquirer';
-import { ui } from '../../command';
+import { prompt, ui } from '../../command';
 import { ConfigHelper } from '../configHelper';
 import { GenericHelper } from '../genericHelper';
 import { STS } from '@aws-sdk/client-sts';
@@ -49,7 +48,7 @@ export class AwsHelper {
     }
 
     ui.updateBottomBar('');
-    const { accountId } = await inquirer.prompt({
+    const { accountId } = await prompt('accountId', {
       type: 'input',
       name: 'accountId',
       message: `What is your AWS Account ID?`,
@@ -70,7 +69,7 @@ export class AwsHelper {
 
     config.providers = { ...(config.providers || {}), ...newProvider };
 
-    const { addPermissions } = await inquirer.prompt({
+    const { addPermissions } = await prompt('addPermissions', {
       type: 'confirm',
       name: 'addPermissions',
       message: `Would you like to grant any permissions to GitHub users now?`,
@@ -95,7 +94,7 @@ export class AwsHelper {
     ui.updateBottomBar('');
     let roleArn: string;
     roleArn = (
-      await inquirer.prompt({
+      await prompt('role', {
         type: 'list',
         name: 'roleArn',
         message: `What is role you would like to allow for assumption?`,
@@ -107,7 +106,7 @@ export class AwsHelper {
     ).roleArn;
 
     if (!roleArn) {
-      const { arnInput } = await inquirer.prompt({
+      const { arnInput } = await prompt('arn', {
         type: 'input',
         name: 'arnInput',
         message: `What is ARN of the new role you would like to allow for assumption?
