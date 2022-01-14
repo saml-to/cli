@@ -1041,10 +1041,10 @@
   dependencies:
     "@octokit/openapi-types" "^11.2.0"
 
-"@scaffoldly/openapi-generator@^1.0.24":
-  version "1.0.24"
-  resolved "https://registry.yarnpkg.com/@scaffoldly/openapi-generator/-/openapi-generator-1.0.24.tgz#bacaba9caf6f2fcd474b64d68c5df50890c05247"
-  integrity sha512-8rgWA41ubyc93pvPMYs23nJfCMo9DqSLuA2CPkR/WKIpA1KRkyTyZdUUWOePGvxU7FfOpAOe0dg9XD1MtthLcQ==
+"@scaffoldly/openapi-generator@^1.0.25":
+  version "1.0.25"
+  resolved "https://registry.yarnpkg.com/@scaffoldly/openapi-generator/-/openapi-generator-1.0.25.tgz#6f885cfd4d2d456471d019568c7f5991aaa1895f"
+  integrity sha512-pvlp8HLXQIdfm4Lj5dhbUThePvJAByRlCXVKCz4lp8XUTenTpJXUMiWFiNEv6UJhNhmOsuCQkbbf/5Ka1vPOmA==
   dependencies:
     axios "^0.21.1"
     js-yaml "^4.1.0"
