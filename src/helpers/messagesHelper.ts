@@ -125,8 +125,10 @@ For more information, check out https://docs.saml.to/troubleshooting/administrat
     this.write(`
 You have no ${context}!
 
-You can set up by running:
+If this is your first time using SAML.to, you can get started by running:
 \`${this.processName} init\`
+
+Alternatively, you may find out which organizations you're a member of with the \`${this.processName} show orgs\` command, then you should reach out to the administrators of those organizations to grant you log in privileges.
 
 For more information on getting started, visit
  - https://saml.to

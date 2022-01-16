@@ -89,7 +89,30 @@ export class Login {
 
   async promptLogin(org?: string): Promise<GithubSlsRestApiLoginResponse> {
     ui.updateBottomBar('Fetching logins...');
-    const logins = await this.show.fetchLogins(org);
+
+    let logins: GithubSlsRestApiLoginResponse[] | undefined;
+    try {
+      logins = await this.show.fetchLogins(org);
+    } catch (e) {
+      if (axios.isAxiosError(e)) {
+        if (e.response && e.response.status === 401) {
+          ui.updateBottomBar('');
+          const { newLogin } = await prompt('newLogin', {
+            type: 'confirm',
+            name: 'newLogin',
+            message: `There's a problem fetching logins with the stored token. Would you like to re-log into GitHub?`,
+          });
+          if (newLogin) {
+            await this.githubHelper.promptLogin('user:email', org);
+            return this.promptLogin(org);
+          }
+        }
+      }
+      if (e instanceof Error) {
+        throw new Error(`Error fetching logins: ${e.message}`);
+      }
+      throw e;
+    }
 
     if (logins.length === 0) {
       this.messagesHelper.getSetup('logins configured');

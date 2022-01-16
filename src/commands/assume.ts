@@ -88,9 +88,18 @@ export class Assume {
     if (samlResponse.browserUri) {
       ui.updateBottomBar('');
       console.log(`Opening browser to ${new URL(samlResponse.browserUri).origin}`);
-      await open(samlResponse.browserUri, { allowNonzeroExitCode: false });
+      const wait = process.platform !== 'darwin';
+      const proc = await open(samlResponse.browserUri, {
+        allowNonzeroExitCode: false,
+        wait,
+      });
+      if (wait && proc.exitCode !== 0) {
+        throw new Error(`Unable to open the browser. Please manually open a browser to:
+
+${samlResponse.browserUri}`);
+      }
     } else {
-      throw new Error(`Browser URI is not set.`);
+      new Error(`Browser URI is not set.`);
     }
   }
 

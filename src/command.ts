@@ -12,7 +12,9 @@ import { Add, AddAttributes, AddNameIdFormats, AddSubcommands } from './commands
 import { Login } from './commands/login';
 import { MessagesHelper } from './helpers/messagesHelper';
 import PromptUI from 'inquirer/lib/ui/prompt';
-import { readFileSync } from 'fs';
+import packageJson from '../package.json';
+
+const { version } = packageJson;
 
 const loginWrapper = async (
   messagesHelper: MessagesHelper,
@@ -34,6 +36,11 @@ const loginWrapper = async (
 
 export const ui = new inquirer.ui.BottomBar({ output: process.stderr });
 
+process.addListener('SIGINT', () => {
+  console.log('Exiting!');
+  process.exit(-1);
+});
+
 export const prompt = <T>(
   field: string,
   questions: QuestionCollection<T>,
@@ -44,8 +51,6 @@ export const prompt = <T>(
   }
   return inquirer.prompt(questions, initialAnswers);
 };
-
-const { version } = JSON.parse(readFileSync('../package.json').toString());
 
 export class Command {
   private messagesHelper: MessagesHelper;
@@ -408,15 +413,15 @@ export class Command {
         },
       })
       .help()
-      .showHelpOnFail(true)
-      .strict()
       .wrap(null)
       .version(version)
       .fail((msg, error) => {
         if (axios.isAxiosError(error)) {
           if (error.response && error.response.status === 401) {
             ui.updateBottomBar('');
-            console.error('Unauthorized');
+            console.error(
+              `Unauthorized. Please generate a new GitHub Identity using the \`${this.messagesHelper.processName} login\` command`,
+            );
           } else {
             ui.updateBottomBar('');
             console.error(
@@ -427,7 +432,6 @@ export class Command {
             );
           }
         } else {
-          ui.updateBottomBar('');
           console.error(`Error: ${error ? error.message : msg}`);
         }
         process.exit(-1);
