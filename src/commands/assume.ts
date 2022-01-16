@@ -88,12 +88,11 @@ export class Assume {
     if (samlResponse.browserUri) {
       ui.updateBottomBar('');
       console.log(`Opening browser to ${new URL(samlResponse.browserUri).origin}`);
-      const wait = process.platform !== 'darwin';
+      const wait = process.platform !== 'darwin' && process.platform !== 'win32';
       const proc = await open(samlResponse.browserUri, {
         allowNonzeroExitCode: false,
         wait,
       });
-      console.log('!!! proc', proc);
       if (wait && proc.exitCode !== 0) {
         throw new Error(`Unable to open the browser. Please manually open a browser to:
 
