@@ -100,7 +100,7 @@ export class Login {
           const { newLogin } = await prompt('newLogin', {
             type: 'confirm',
             name: 'newLogin',
-            message: `There's a problem fetching logins with the stored token. Would you like to re-log into GitHub?`,
+            message: `There's a problem fetching logins with the stored token. Would you like to (re-)log in to GitHub?`,
           });
           if (newLogin) {
             await this.githubHelper.promptLogin('user:email', org);
