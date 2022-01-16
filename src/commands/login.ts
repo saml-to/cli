@@ -104,7 +104,7 @@ export class Login {
           });
           if (newLogin) {
             await this.githubHelper.promptLogin('user:email', org);
-            return this.promptLogin(org);
+            throw new Error(`New identity has been stored. Please run your desired command again.`);
           }
         }
       }
