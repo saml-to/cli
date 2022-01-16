@@ -81,13 +81,14 @@ export class Login {
     if (samlResponse.browserUri) {
       ui.updateBottomBar('');
       console.log(`Opening browser to ${new URL(samlResponse.browserUri).origin}`);
-      await open(samlResponse.browserUri);
+      await open(samlResponse.browserUri, { allowNonzeroExitCode: false });
     } else {
       throw new Error(`Browser URI is not set.`);
     }
   }
 
   async promptLogin(org?: string): Promise<GithubSlsRestApiLoginResponse> {
+    ui.updateBottomBar('Fetching logins...');
     const logins = await this.show.fetchLogins(org);
 
     if (logins.length === 0) {

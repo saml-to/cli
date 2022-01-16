@@ -88,7 +88,7 @@ export class Assume {
     if (samlResponse.browserUri) {
       ui.updateBottomBar('');
       console.log(`Opening browser to ${new URL(samlResponse.browserUri).origin}`);
-      await open(samlResponse.browserUri);
+      await open(samlResponse.browserUri, { allowNonzeroExitCode: false });
     } else {
       throw new Error(`Browser URI is not set.`);
     }
@@ -103,6 +103,7 @@ export class Assume {
   }
 
   async promptRole(org?: string, provider?: string): Promise<GithubSlsRestApiRoleResponse> {
+    ui.updateBottomBar('Fetching roles...');
     const roles = await this.show.fetchRoles(org, provider);
 
     if (roles.length === 0) {
