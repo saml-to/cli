@@ -93,6 +93,7 @@ export class Assume {
         allowNonzeroExitCode: false,
         wait,
       });
+      console.log('!!! proc', proc);
       if (wait && proc.exitCode !== 0) {
         throw new Error(`Unable to open the browser. Please manually open a browser to:
 
