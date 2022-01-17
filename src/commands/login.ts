@@ -7,13 +7,13 @@ import {
 import { ERROR_LOGGING_IN, MULTIPLE_LOGINS, NO_GITHUB_CLIENT } from '../messages';
 import { Scms } from '../stores/scms';
 import axios from 'axios';
-import open from 'open';
 import { Show } from './show';
 import { AwsHelper } from '../helpers/aws/awsHelper';
 import { GithubHelper } from '../helpers/githubHelper';
 import { prompt, ui } from '../command';
 import { MessagesHelper } from '../helpers/messagesHelper';
 import { event } from '../helpers/events';
+import { openBrowser } from '../helpers/browserHelper';
 
 export class Login {
   scms: Scms;
@@ -79,16 +79,7 @@ export class Login {
 
   private async loginBrowser(samlResponse: GithubSlsRestApiLoginResponseContainer): Promise<void> {
     if (samlResponse.browserUri) {
-      ui.updateBottomBar('');
-      const wait = process.platform !== 'win32' && process.platform !== 'darwin';
-      const proc = await open(samlResponse.browserUri, {
-        wait: process.platform !== 'win32' && process.platform !== 'darwin',
-      });
-      if (wait && proc.exitCode !== 0) {
-        console.log(samlResponse.browserUri);
-      } else {
-        console.log(`Browser opened to ${new URL(samlResponse.browserUri).origin}`);
-      }
+      await openBrowser(samlResponse.browserUri);
     } else {
       new Error(`Browser URI is not set.`);
     }
