@@ -8,6 +8,7 @@ export const openBrowser = (url: string): Promise<void> => {
     open(url, {
       wait,
     }).then((proc) => {
+      console.log('Platform:', process.platform);
       if (process.platform === 'win32') {
         proc.addListener('exit', () => {
           resolve();
