@@ -417,7 +417,12 @@ export class Command {
       .command({
         command: 'google',
         handler: async () => {
-          await open('https://google.com', {});
+          const proc = await open('https://google.com', {});
+          proc.addListener('close', () => console.log('closed'));
+          proc.addListener('disconnect', () => console.log('disconnect'));
+          proc.addListener('error', () => console.log('error'));
+          proc.addListener('exit', () => console.log('exit'));
+          proc.addListener('message', () => console.log('message'));
         },
       })
       .help()
