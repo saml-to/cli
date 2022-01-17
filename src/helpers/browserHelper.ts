@@ -8,16 +8,25 @@ export const openBrowser = (url: string): Promise<void> => {
     open(url, {
       wait,
     }).then((proc) => {
-      if (process.platform === 'win32') {
-        proc.addListener('close', () => {
-          resolve();
-        });
-        return;
-      } else if (wait && proc.exitCode !== 0) {
+      if (wait && proc.exitCode !== 0) {
+        ui.updateBottomBar('');
         console.log(url);
+        resolve();
       } else {
-        console.log(`Browser opened to ${new URL(url).origin}`);
+        resolve();
       }
+      // if (process.platform === 'win32') {
+      //   proc.addListener('close', () => {
+      //     resolve();
+      //   });
+      //   return;
+      // } else if (wait && proc.exitCode !== 0) {
+      //   console.log(url);
+      //   resolve();
+      // } else {
+      //   console.log(`Browser opened to ${new URL(url).origin}`);
+      //   resolve();
+      // }
     });
   });
 };

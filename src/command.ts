@@ -80,7 +80,7 @@ export class Command {
       .command({
         command: 'list-logins',
         describe: `Show providers that are available to login`,
-        handler: async ({ org, provider, refresh }) =>
+        handler: ({ org, provider, refresh }) =>
           loginWrapper(this.messagesHelper, 'user:email', () =>
             this.show.handle(
               'logins' as ShowSubcommands,
@@ -113,7 +113,7 @@ export class Command {
       .command({
         command: 'list-roles',
         describe: `Show roles that are available to assume`,
-        handler: async ({ org, provider, refresh }) =>
+        handler: ({ org, provider, refresh }) =>
           loginWrapper(this.messagesHelper, 'user:email', () =>
             this.show.handle(
               'roles' as ShowSubcommands,
@@ -146,7 +146,7 @@ export class Command {
       .command({
         command: 'login [provider]',
         describe: `Login to a provider`,
-        handler: async ({ org, provider }) =>
+        handler: ({ org, provider }) =>
           loginWrapper(this.messagesHelper, 'user:email', () =>
             this.login.handle(provider as string | undefined, org as string | undefined),
           ),
@@ -166,7 +166,7 @@ export class Command {
       .command({
         command: 'assume [role]',
         describe: 'Assume a role',
-        handler: async ({ role, org, provider, headless }) =>
+        handler: ({ role, org, provider, headless }) =>
           loginWrapper(this.messagesHelper, 'user:email', () =>
             this.assume.handle(
               role as string,
@@ -202,9 +202,7 @@ export class Command {
       .command({
         command: 'init',
         describe: '(Administrative) Initialize SAML.to with a GitHub Repository',
-        handler: async ({ force }) => {
-          await this.init.handle(force as boolean | undefined);
-        },
+        handler: ({ force }) => this.init.handle(force as boolean | undefined),
         builder: {
           force: {
             demand: false,
@@ -216,7 +214,7 @@ export class Command {
       .command({
         command: 'add [type] [name]',
         describe: '(Administrative) Add providers or permissions to the configuration',
-        handler: async ({
+        handler: ({
           type,
           name,
           entityId,
@@ -226,8 +224,8 @@ export class Command {
           nameIdFormat,
           role,
           attribute,
-        }) => {
-          await loginWrapper(this.messagesHelper, 'repo', () =>
+        }) =>
+          loginWrapper(this.messagesHelper, 'repo', () =>
             this.add.handle(
               type as AddSubcommands,
               name as string | undefined,
@@ -239,8 +237,7 @@ export class Command {
               role as string | undefined,
               attribute as AddAttributes | undefined,
             ),
-          );
-        },
+          ),
         builder: {
           type: {
             demand: true,
@@ -312,8 +309,8 @@ export class Command {
       .command({
         command: 'set [name] [subcommand]',
         describe: '(Administrative) Set a provider setting (e.g. provisioning)',
-        handler: async ({ name, subcommand, type, endpoint, token }) => {
-          await loginWrapper(this.messagesHelper, 'repo', () =>
+        handler: ({ name, subcommand, type, endpoint, token }) =>
+          loginWrapper(this.messagesHelper, 'repo', () =>
             this.set.handle(
               subcommand as SetSubcommands,
               name as string,
@@ -323,8 +320,7 @@ export class Command {
                 token: token as string | undefined,
               } as SetHandleOpts,
             ),
-          );
-        },
+          ),
         builder: {
           name: {
             demand: true,
@@ -353,18 +349,17 @@ export class Command {
       .command({
         command: 'show [subcommand]',
         describe: `(Administrative) Show various configurations (metadata, certificate, entityId, config, etc.)`,
-        handler: async ({ org, provider, subcommand, save, refresh, raw }) => {
-          await loginWrapper(this.messagesHelper, 'user:email', async () => {
-            await this.show.handle(
+        handler: ({ org, provider, subcommand, save, refresh, raw }) =>
+          loginWrapper(this.messagesHelper, 'user:email', async () =>
+            this.show.handle(
               subcommand as ShowSubcommands,
               org as string | undefined,
               provider as string | undefined,
               save as boolean | undefined,
               refresh as boolean | undefined,
               raw as boolean | undefined,
-            );
-          });
-        },
+            ),
+          ),
         builder: {
           subcommand: {
             demand: true,
