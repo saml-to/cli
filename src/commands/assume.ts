@@ -85,13 +85,15 @@ export class Assume {
   private async assumeBrowser(samlResponse: GithubSlsRestApiSamlResponseContainer): Promise<void> {
     if (samlResponse.browserUri) {
       ui.updateBottomBar('');
-      console.log(`Opening browser to ${new URL(samlResponse.browserUri).origin}`);
-      await open(samlResponse.browserUri, {});
-      //       if (wait && proc.exitCode !== 0) {
-      //         throw new Error(`Unable to open the browser. Please manually open a browser to:
-
-      // ${samlResponse.browserUri}`);
-      //       }
+      const wait = process.platform !== 'win32' && process.platform !== 'darwin';
+      const proc = await open(samlResponse.browserUri, {
+        wait: process.platform !== 'win32' && process.platform !== 'darwin',
+      });
+      if (wait && proc.exitCode !== 0) {
+        console.log(samlResponse.browserUri);
+      } else {
+        console.log(`Browser opened to ${new URL(samlResponse.browserUri).origin}`);
+      }
     } else {
       new Error(`Browser URI is not set.`);
     }

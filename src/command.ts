@@ -13,7 +13,6 @@ import { Login } from './commands/login';
 import { MessagesHelper } from './helpers/messagesHelper';
 import PromptUI from 'inquirer/lib/ui/prompt';
 import packageJson from '../package.json';
-import open from 'open';
 
 const { version } = packageJson;
 
@@ -39,7 +38,7 @@ export const ui = new inquirer.ui.BottomBar({ output: process.stderr });
 
 process.addListener('SIGINT', () => {
   console.log('Exiting!');
-  process.exit(-1);
+  process.exit(0);
 });
 
 export const prompt = <T>(
@@ -414,25 +413,6 @@ export class Command {
           },
         },
       })
-      .command({
-        command: 'google',
-        handler: () => {
-          return new Promise((resolve) => {
-            console.log('opening...');
-            open('https://google.com', {}).then((proc) => {
-              console.log('opened...', proc);
-              proc.addListener('close', () => {
-                console.log('closed');
-                resolve();
-              });
-              proc.addListener('disconnect', () => console.log('disconnect'));
-              proc.addListener('error', () => console.log('error'));
-              proc.addListener('exit', () => console.log('exit'));
-              proc.addListener('message', () => console.log('message'));
-            });
-          });
-        },
-      })
       .help()
       .wrap(null)
       .version(version)
@@ -455,7 +435,6 @@ export class Command {
         } else {
           console.error(`Error: ${error ? error.message : msg}`);
         }
-        process.exit(-1);
       });
 
     const parsed = await ya.parse(hideBin(argv));

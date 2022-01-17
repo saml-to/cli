@@ -60,7 +60,7 @@ export class Login {
 
     try {
       const { data: response } = await idpApi.providerLogin(provider, org);
-      await this.assumeBrowser(response);
+      await this.loginBrowser(response);
     } catch (e) {
       if (axios.isAxiosError(e) && e.response) {
         if (e.response.status === 403) {
@@ -77,13 +77,20 @@ export class Login {
     return;
   }
 
-  private async assumeBrowser(samlResponse: GithubSlsRestApiLoginResponseContainer): Promise<void> {
+  private async loginBrowser(samlResponse: GithubSlsRestApiLoginResponseContainer): Promise<void> {
     if (samlResponse.browserUri) {
       ui.updateBottomBar('');
-      console.log(`Opening browser to ${new URL(samlResponse.browserUri).origin}`);
-      await open(samlResponse.browserUri, { allowNonzeroExitCode: false });
+      const wait = process.platform !== 'win32' && process.platform !== 'darwin';
+      const proc = await open(samlResponse.browserUri, {
+        wait: process.platform !== 'win32' && process.platform !== 'darwin',
+      });
+      if (wait && proc.exitCode !== 0) {
+        console.log(samlResponse.browserUri);
+      } else {
+        console.log(`Browser opened to ${new URL(samlResponse.browserUri).origin}`);
+      }
     } else {
-      throw new Error(`Browser URI is not set.`);
+      new Error(`Browser URI is not set.`);
     }
   }
 
