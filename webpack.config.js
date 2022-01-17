@@ -2,8 +2,6 @@
 /* eslint-disable no-undef */
 const path = require('path');
 const webpack = require('webpack');
-const packageJson = require('./package.json');
-const { version } = packageJson;
 
 // eslint-disable-next-line no-undef
 module.exports = {
@@ -24,7 +22,7 @@ module.exports = {
 
   // file resolutions
   resolve: {
-    extensions: ['.ts', '.js'],
+    extensions: ['.ts', '.js', '.json'],
   },
 
   // loaders
@@ -40,12 +38,5 @@ module.exports = {
 
   devtool: 'source-map',
 
-  plugins: [
-    new webpack.BannerPlugin({ banner: '#!/usr/bin/env node', raw: true }),
-    new webpack.DefinePlugin({
-      'process.env': {
-        VERSION: JSON.stringify(version),
-      },
-    }),
-  ],
+  plugins: [new webpack.BannerPlugin({ banner: '#!/usr/bin/env node', raw: true })],
 };

@@ -12,6 +12,7 @@ import { Add, AddAttributes, AddNameIdFormats, AddSubcommands } from './commands
 import { Login } from './commands/login';
 import { MessagesHelper } from './helpers/messagesHelper';
 import PromptUI from 'inquirer/lib/ui/prompt';
+import { version } from '../package.json';
 
 const loginWrapper = async (
   messagesHelper: MessagesHelper,
@@ -407,7 +408,7 @@ export class Command {
       })
       .help()
       .wrap(null)
-      .version(`${process.env.VERSION || 'idk'}`)
+      .version(version)
       .fail((msg, error) => {
         if (axios.isAxiosError(error)) {
           if (error.response && error.response.status === 401) {
