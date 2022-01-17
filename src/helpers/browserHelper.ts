@@ -7,7 +7,6 @@ export const openBrowser = (url: string): Promise<void> => {
     open(url, {
       wait: true,
     }).then((proc) => {
-      console.log('Platform:', process.platform);
       if (proc.exitCode !== 0) {
         ui.updateBottomBar('');
         console.log(url);
