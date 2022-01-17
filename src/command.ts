@@ -416,13 +416,21 @@ export class Command {
       })
       .command({
         command: 'google',
-        handler: async () => {
-          const proc = await open('https://google.com', {});
-          proc.addListener('close', () => console.log('closed'));
-          proc.addListener('disconnect', () => console.log('disconnect'));
-          proc.addListener('error', () => console.log('error'));
-          proc.addListener('exit', () => console.log('exit'));
-          proc.addListener('message', () => console.log('message'));
+        handler: () => {
+          return new Promise((resolve) => {
+            console.log('opening...');
+            open('https://google.com', {}).then((proc) => {
+              console.log('opened...', proc);
+              proc.addListener('close', () => {
+                console.log('closed');
+                resolve();
+              });
+              proc.addListener('disconnect', () => console.log('disconnect'));
+              proc.addListener('error', () => console.log('error'));
+              proc.addListener('exit', () => console.log('exit'));
+              proc.addListener('message', () => console.log('message'));
+            });
+          });
         },
       })
       .help()
