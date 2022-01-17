@@ -2,7 +2,7 @@ import open from 'open';
 import { ui } from '../command';
 
 export const openBrowser = (url: string): Promise<void> => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     ui.updateBottomBar('');
     open(url, {
       wait: true,
