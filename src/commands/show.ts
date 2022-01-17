@@ -50,18 +50,15 @@ export class Show {
     switch (subcommand) {
       case 'orgs': {
         event(this.scms, 'show', subcommand, org);
-        await this.showOrgs(save);
-        return;
+        return this.showOrgs(save);
       }
       case 'roles': {
         event(this.scms, 'show', subcommand, org);
-        await this.showRoles(org, provider, refresh, save);
-        return;
+        return this.showRoles(org, provider, refresh, save);
       }
       case 'logins': {
         event(this.scms, 'show', subcommand, org);
-        await this.showLogins(org, refresh, save);
-        return;
+        return this.showLogins(org, refresh, save);
       }
       default:
         break;

@@ -13,6 +13,7 @@ import { Login } from './commands/login';
 import { MessagesHelper } from './helpers/messagesHelper';
 import PromptUI from 'inquirer/lib/ui/prompt';
 import packageJson from '../package.json';
+import open from 'open';
 
 const { version } = packageJson;
 
@@ -149,7 +150,7 @@ export class Command {
       .command({
         command: 'login [provider]',
         describe: `Login to a provider`,
-        handler: ({ org, provider }) =>
+        handler: async ({ org, provider }) =>
           loginWrapper(this.messagesHelper, 'user:email', () =>
             this.login.handle(provider as string | undefined, org as string | undefined),
           ),
@@ -169,7 +170,7 @@ export class Command {
       .command({
         command: 'assume [role]',
         describe: 'Assume a role',
-        handler: ({ role, org, provider, headless }) =>
+        handler: async ({ role, org, provider, headless }) =>
           loginWrapper(this.messagesHelper, 'user:email', () =>
             this.assume.handle(
               role as string,
@@ -356,17 +357,18 @@ export class Command {
       .command({
         command: 'show [subcommand]',
         describe: `(Administrative) Show various configurations (metadata, certificate, entityId, config, etc.)`,
-        handler: async ({ org, provider, subcommand, save, refresh, raw }) =>
-          loginWrapper(this.messagesHelper, 'user:email', () =>
-            this.show.handle(
+        handler: async ({ org, provider, subcommand, save, refresh, raw }) => {
+          await loginWrapper(this.messagesHelper, 'user:email', async () => {
+            await this.show.handle(
               subcommand as ShowSubcommands,
               org as string | undefined,
               provider as string | undefined,
               save as boolean | undefined,
               refresh as boolean | undefined,
               raw as boolean | undefined,
-            ),
-          ),
+            );
+          });
+        },
         builder: {
           subcommand: {
             demand: true,
@@ -410,6 +412,12 @@ export class Command {
             default: false,
             description: 'For `config` subcommand, show raw configuration',
           },
+        },
+      })
+      .command({
+        command: 'google',
+        handler: async () => {
+          await open('https://google.com', {});
         },
       })
       .help()

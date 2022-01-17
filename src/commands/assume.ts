@@ -64,9 +64,9 @@ export class Assume {
     try {
       const { data: response } = await idpApi.assumeRole(role, org, provider);
       if (headless) {
-        await this.assumeTerminal(response);
+        return await this.assumeTerminal(response);
       } else {
-        await this.assumeBrowser(response);
+        return await this.assumeBrowser(response);
       }
     } catch (e) {
       if (axios.isAxiosError(e) && e.response) {
@@ -80,24 +80,18 @@ export class Assume {
       }
       throw e;
     }
-
-    return;
   }
 
   private async assumeBrowser(samlResponse: GithubSlsRestApiSamlResponseContainer): Promise<void> {
     if (samlResponse.browserUri) {
       ui.updateBottomBar('');
       console.log(`Opening browser to ${new URL(samlResponse.browserUri).origin}`);
-      const wait = process.platform !== 'darwin' && process.platform !== 'win32';
-      const proc = await open(samlResponse.browserUri, {
-        allowNonzeroExitCode: false,
-        wait,
-      });
-      if (wait && proc.exitCode !== 0) {
-        throw new Error(`Unable to open the browser. Please manually open a browser to:
+      await open(samlResponse.browserUri, {});
+      //       if (wait && proc.exitCode !== 0) {
+      //         throw new Error(`Unable to open the browser. Please manually open a browser to:
 
-${samlResponse.browserUri}`);
-      }
+      // ${samlResponse.browserUri}`);
+      //       }
     } else {
       new Error(`Browser URI is not set.`);
     }
