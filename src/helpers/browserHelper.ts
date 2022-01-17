@@ -16,8 +16,9 @@ export const openBrowser = (url: string): Promise<void> => {
           resolve();
         }
       })
-      .catch((e) => {
-        reject(e);
+      .catch(() => {
+        ui.updateBottomBar('');
+        console.log(url);
       });
   });
 };
