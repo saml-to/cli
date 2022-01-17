@@ -8,7 +8,11 @@ export const openBrowser = (url: string): Promise<void> => {
     open(url, {
       wait,
     }).then((proc) => {
-      if (wait && proc.exitCode !== 0) {
+      if (process.platform === 'win32') {
+        proc.addListener('exit', () => {
+          resolve();
+        });
+      } else if (wait && proc.exitCode !== 0) {
         ui.updateBottomBar('');
         console.log(url);
         resolve();
