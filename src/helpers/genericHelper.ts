@@ -427,27 +427,33 @@ ${githubLogins.map((l) => `- ${l}`)}`,
     );
   }
 
-  outputEnv(
-    vars: { [key: string]: string },
-    platform: NodeJS.Platform | 'github' = process.platform,
-  ): void {
-    let prefix = 'export';
-    let separator = '=';
+  outputEnv(vars: { [key: string]: string }, platform: NodeJS.Platform = process.platform): void {
     switch (platform) {
-      case 'win32':
-        prefix = 'setx';
+      case 'win32': {
+        Object.entries(vars).forEach(([key, value], i, arr) => {
+          process.stdout.write('set ');
+          process.stdout.write(key);
+          process.stdout.write('=');
+          process.stdout.write(value);
+          if (i + 1 < arr.length) {
+            process.stdout.write(' & ');
+          }
+        });
         break;
-      case 'github':
-        prefix = '::set-output';
-        separator = '::';
+      }
+      default: {
+        process.stdout.write('export ');
+        Object.entries(vars).forEach(([key, value], i, arr) => {
+          process.stdout.write(key);
+          process.stdout.write('=');
+          process.stdout.write(value);
+          if (i + 1 < arr.length) {
+            process.stdout.write(' ');
+          }
+        });
         break;
-      default:
-        break;
+      }
     }
-
-    Object.entries(vars).forEach(([key, value]) => {
-      console.log(`${prefix} ${key}${separator}"${value}"`);
-    });
   }
 
   public async promptAttributes(

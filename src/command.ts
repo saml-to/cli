@@ -14,8 +14,15 @@ import { MessagesHelper } from './helpers/messagesHelper';
 import PromptUI from 'inquirer/lib/ui/prompt';
 import { version } from '../package.json';
 import { ApiHelper } from './helpers/apiHelper';
+import BottomBar from 'inquirer/lib/ui/bottom-bar';
 
-export const ui = new inquirer.ui.BottomBar({ output: process.stderr });
+export let ui: BottomBar;
+
+if (!process.argv.find((arg) => arg === '--headless')) {
+  ui = new BottomBar({ output: process.stderr });
+} else {
+  ui = {} as BottomBar;
+}
 
 process.addListener('SIGINT', () => {
   console.log('Exiting!');
