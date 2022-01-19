@@ -1,4 +1,3 @@
-import { JwtGithubApi } from '../../api/auth-sls-rest-api';
 import axios from 'axios';
 import moment from 'moment';
 import { NoTokenError, Scms } from '../stores/scms';
@@ -8,6 +7,7 @@ import { ui } from '../command';
 import { Octokit } from '@octokit/rest';
 import { MessagesHelper } from './messagesHelper';
 import { event } from './events';
+import { ApiHelper } from './apiHelper';
 
 type DeviceCodeRequest = {
   client_id: string;
@@ -39,14 +39,14 @@ export type AccessTokenResponse = {
 export class GithubHelper {
   scms: Scms;
 
-  constructor(private messagesHelper: MessagesHelper) {
+  constructor(private apiHelper: ApiHelper, private messagesHelper: MessagesHelper) {
     this.scms = new Scms();
   }
 
   async promptLogin(scope = 'user:email', org?: string): Promise<void> {
     event(this.scms, 'fn:promptLogin', scope, org);
 
-    const api = new JwtGithubApi();
+    const api = this.apiHelper.jwtGithubApi();
     const { data: oauthDetail } = await api.getOauthDetail();
     const { clientId } = oauthDetail;
 

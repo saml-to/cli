@@ -9,15 +9,16 @@ import { ConfigHelper } from '../configHelper';
 import { GenericHelper } from '../genericHelper';
 import { STS } from '@aws-sdk/client-sts';
 import { MessagesHelper } from '../messagesHelper';
+import { ApiHelper } from '../apiHelper';
 
 export class AwsHelper {
   configHelper: ConfigHelper;
 
   genericHelper: GenericHelper;
 
-  constructor(messagesHelper: MessagesHelper) {
-    this.configHelper = new ConfigHelper();
-    this.genericHelper = new GenericHelper(messagesHelper);
+  constructor(apiHelper: ApiHelper, messagesHelper: MessagesHelper) {
+    this.configHelper = new ConfigHelper(apiHelper);
+    this.genericHelper = new GenericHelper(apiHelper, messagesHelper);
   }
 
   // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types,@typescript-eslint/no-explicit-any
@@ -156,7 +157,7 @@ ${githubLogins.map((l) => `- ${l}`)}`,
   }
 
   async assumeAws(samlResponse: GithubSlsRestApiSamlResponseContainer): Promise<void> {
-    const sts = new STS({});
+    const sts = new STS({ region: 'us-east-1' });
     const opts = samlResponse.sdkOptions as GithubSlsRestApiAwsAssumeSdkOptions;
     if (!opts) {
       throw new Error('Missing sdk options from saml response');
@@ -174,6 +175,7 @@ ${githubLogins.map((l) => `- ${l}`)}`,
       throw new Error('Missing credentials');
     }
     this.genericHelper.outputEnv({
+      AWS_DEFAULT_REGION: 'us-east-1',
       AWS_ACCESS_KEY_ID: response.Credentials.AccessKeyId,
       AWS_SECRET_ACCESS_KEY: response.Credentials.SecretAccessKey,
       AWS_SESSION_TOKEN: response.Credentials.SessionToken,

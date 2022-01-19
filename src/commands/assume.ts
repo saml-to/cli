@@ -1,6 +1,4 @@
 import {
-  IDPApi,
-  Configuration,
   GithubSlsRestApiSamlResponseContainer,
   GithubSlsRestApiRoleResponse,
 } from '../../api/github-sls-rest-api';
@@ -12,24 +10,25 @@ import {
 } from '../messages';
 import { Scms } from '../stores/scms';
 import axios from 'axios';
-import { Show } from './show';
+import { ShowCommand } from './show';
 import { prompt, ui } from '../command';
 import { AwsHelper } from '../helpers/aws/awsHelper';
 import { MessagesHelper } from '../helpers/messagesHelper';
 import { event } from '../helpers/events';
 import { openBrowser } from '../helpers/browserHelper';
+import { ApiHelper } from '../helpers/apiHelper';
 
-export class Assume {
+export class AssumeCommand {
   scms: Scms;
 
-  show: Show;
+  show: ShowCommand;
 
   awsHelper: AwsHelper;
 
-  constructor(private messagesHelper: MessagesHelper) {
+  constructor(private apiHelper: ApiHelper, private messagesHelper: MessagesHelper) {
     this.scms = new Scms();
-    this.show = new Show();
-    this.awsHelper = new AwsHelper(messagesHelper);
+    this.show = new ShowCommand(apiHelper);
+    this.awsHelper = new AwsHelper(apiHelper, messagesHelper);
   }
 
   async handle(role?: string, headless = false, org?: string, provider?: string): Promise<void> {
@@ -55,11 +54,7 @@ export class Assume {
       throw new Error(`Please specify a role to assume`);
     }
 
-    const idpApi = new IDPApi(
-      new Configuration({
-        accessToken: token,
-      }),
-    );
+    const idpApi = this.apiHelper.idpApi(token);
 
     try {
       const { data: response } = await idpApi.assumeRole(role, org, provider);

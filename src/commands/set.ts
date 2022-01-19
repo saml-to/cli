@@ -1,14 +1,11 @@
-import {
-  GithubSlsRestApiConfigV20220101,
-  IDPApi,
-  Configuration,
-} from '../../api/github-sls-rest-api';
+import { GithubSlsRestApiConfigV20220101 } from '../../api/github-sls-rest-api';
 import { load } from 'js-yaml';
 import { ConfigHelper } from '../helpers/configHelper';
 import { prompt, ui } from '../command';
 import { OrgHelper } from '../helpers/orgHelper';
 import { Scms } from '../stores/scms';
 import { event } from '../helpers/events';
+import { ApiHelper } from '../helpers/apiHelper';
 
 export type SetSubcommands = 'provisioning';
 
@@ -20,16 +17,16 @@ export type SetHandleOpts = {
   token?: string;
 };
 
-export class Set {
+export class SetCommand {
   orgHelper: OrgHelper;
 
   configHelper: ConfigHelper;
 
   scms: Scms;
 
-  constructor() {
-    this.orgHelper = new OrgHelper();
-    this.configHelper = new ConfigHelper();
+  constructor(private apiHelper: ApiHelper) {
+    this.orgHelper = new OrgHelper(apiHelper);
+    this.configHelper = new ConfigHelper(apiHelper);
     this.scms = new Scms();
   }
 
@@ -157,11 +154,7 @@ export class Set {
 
     const accessToken = this.scms.getGithubToken();
 
-    const idpApi = new IDPApi(
-      new Configuration({
-        accessToken,
-      }),
-    );
+    const idpApi = this.apiHelper.idpApi(accessToken);
 
     ui.updateBottomBar('Encrypting token...');
 

@@ -1,26 +1,19 @@
 import { prompt, ui } from '../command';
-import {
-  GithubSlsRestApiOrgRepoResponse,
-  IDPApi,
-  Configuration,
-} from '../../api/github-sls-rest-api';
+import { GithubSlsRestApiOrgRepoResponse } from '../../api/github-sls-rest-api';
 import { Scms } from '../stores/scms';
 import { event } from './events';
+import { ApiHelper } from './apiHelper';
 
 export class OrgHelper {
   scms: Scms;
 
-  constructor() {
+  constructor(private apiHelper: ApiHelper) {
     this.scms = new Scms();
   }
 
   public async fetchOrgs(): Promise<GithubSlsRestApiOrgRepoResponse[]> {
     const accessToken = this.scms.getGithubToken();
-    const idpApi = new IDPApi(
-      new Configuration({
-        accessToken: accessToken,
-      }),
-    );
+    const idpApi = this.apiHelper.idpApi(accessToken);
     const { data: orgs } = await idpApi.listOrgRepos();
     return orgs.results;
   }

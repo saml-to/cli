@@ -1,36 +1,19 @@
 import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs';
 import axios from 'axios';
-import { Assume } from './commands/assume';
-import { Init } from './commands/init';
-import { Show, ShowSubcommands } from './commands/show';
-import { ProvisioningTypes, Set, SetHandleOpts, SetSubcommands } from './commands/set';
+import { AssumeCommand } from './commands/assume';
+import { InitCommand } from './commands/init';
+import { ShowCommand, ShowSubcommands } from './commands/show';
+import { ProvisioningTypes, SetCommand, SetHandleOpts, SetSubcommands } from './commands/set';
 import inquirer, { QuestionCollection } from 'inquirer';
 import { NoTokenError } from './stores/scms';
 import { GithubHelper } from './helpers/githubHelper';
-import { Add, AddAttributes, AddNameIdFormats, AddSubcommands } from './commands/add';
-import { Login } from './commands/login';
+import { AddCommand, AddAttributes, AddNameIdFormats, AddSubcommands } from './commands/add';
+import { LoginCommand } from './commands/login';
 import { MessagesHelper } from './helpers/messagesHelper';
 import PromptUI from 'inquirer/lib/ui/prompt';
 import { version } from '../package.json';
-
-const loginWrapper = async (
-  messagesHelper: MessagesHelper,
-  scope: string,
-  fn: () => Promise<void>,
-): Promise<void> => {
-  try {
-    await fn();
-  } catch (e) {
-    if (e instanceof NoTokenError) {
-      const githubLogin = new GithubHelper(messagesHelper);
-      await githubLogin.promptLogin(scope);
-      await fn();
-    } else {
-      throw e;
-    }
-  }
-};
+import { ApiHelper } from './helpers/apiHelper';
 
 export const ui = new inquirer.ui.BottomBar({ output: process.stderr });
 
@@ -51,28 +34,31 @@ export const prompt = <T>(
 };
 
 export class Command {
+  private apiHelper: ApiHelper;
+
   private messagesHelper: MessagesHelper;
 
-  private assume: Assume;
+  private assume: AssumeCommand;
 
-  private login: Login;
+  private login: LoginCommand;
 
-  private init: Init;
+  private init: InitCommand;
 
-  private show: Show;
+  private show: ShowCommand;
 
-  private add: Add;
+  private add: AddCommand;
 
-  private set: Set;
+  private set: SetCommand;
 
   constructor(argv: string[]) {
+    this.apiHelper = new ApiHelper(argv);
     this.messagesHelper = new MessagesHelper(argv);
-    this.assume = new Assume(this.messagesHelper);
-    this.login = new Login(this.messagesHelper);
-    this.init = new Init(this.messagesHelper);
-    this.show = new Show();
-    this.add = new Add(this.messagesHelper);
-    this.set = new Set();
+    this.assume = new AssumeCommand(this.apiHelper, this.messagesHelper);
+    this.login = new LoginCommand(this.apiHelper, this.messagesHelper);
+    this.init = new InitCommand(this.apiHelper, this.messagesHelper);
+    this.show = new ShowCommand(this.apiHelper);
+    this.add = new AddCommand(this.apiHelper, this.messagesHelper);
+    this.set = new SetCommand(this.apiHelper);
   }
 
   public async run(argv: string[]): Promise<void> {
@@ -82,7 +68,7 @@ export class Command {
         command: 'list-logins',
         describe: `Show providers that are available to login`,
         handler: ({ org, provider, refresh }) =>
-          loginWrapper(this.messagesHelper, 'user:email', () =>
+          this.loginWrapper('user:email', () =>
             this.show.handle(
               'logins' as ShowSubcommands,
               org as string | undefined,
@@ -115,7 +101,7 @@ export class Command {
         command: 'list-roles',
         describe: `Show roles that are available to assume`,
         handler: ({ org, provider, refresh }) =>
-          loginWrapper(this.messagesHelper, 'user:email', () =>
+          this.loginWrapper('user:email', () =>
             this.show.handle(
               'roles' as ShowSubcommands,
               org as string | undefined,
@@ -148,7 +134,7 @@ export class Command {
         command: 'login [provider]',
         describe: `Login to a provider`,
         handler: ({ org, provider }) =>
-          loginWrapper(this.messagesHelper, 'user:email', () =>
+          this.loginWrapper('user:email', () =>
             this.login.handle(provider as string | undefined, org as string | undefined),
           ),
         builder: {
@@ -168,7 +154,7 @@ export class Command {
         command: 'assume [role]',
         describe: 'Assume a role',
         handler: ({ role, org, provider, headless }) =>
-          loginWrapper(this.messagesHelper, 'user:email', () =>
+          this.loginWrapper('user:email', () =>
             this.assume.handle(
               role as string,
               headless as boolean,
@@ -226,7 +212,7 @@ export class Command {
           role,
           attribute,
         }) =>
-          loginWrapper(this.messagesHelper, 'repo', () =>
+          this.loginWrapper('repo', () =>
             this.add.handle(
               type as AddSubcommands,
               name as string | undefined,
@@ -311,7 +297,7 @@ export class Command {
         command: 'set [name] [subcommand]',
         describe: '(Administrative) Set a provider setting (e.g. provisioning)',
         handler: ({ name, subcommand, type, endpoint, token }) =>
-          loginWrapper(this.messagesHelper, 'repo', () =>
+          this.loginWrapper('repo', () =>
             this.set.handle(
               subcommand as SetSubcommands,
               name as string,
@@ -351,7 +337,7 @@ export class Command {
         command: 'show [subcommand]',
         describe: `(Administrative) Show various configurations (metadata, certificate, entityId, config, etc.)`,
         handler: ({ org, provider, subcommand, save, refresh, raw }) =>
-          loginWrapper(this.messagesHelper, 'user:email', async () =>
+          this.loginWrapper('user:email', async () =>
             this.show.handle(
               subcommand as ShowSubcommands,
               org as string | undefined,
@@ -436,4 +422,18 @@ export class Command {
       ya.showHelp();
     }
   }
+
+  private loginWrapper = async (scope: string, fn: () => Promise<void>): Promise<void> => {
+    try {
+      await fn();
+    } catch (e) {
+      if (e instanceof NoTokenError) {
+        const githubLogin = new GithubHelper(this.apiHelper, this.messagesHelper);
+        await githubLogin.promptLogin(scope);
+        await fn();
+      } else {
+        throw e;
+      }
+    }
+  };
 }

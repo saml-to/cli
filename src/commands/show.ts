@@ -1,7 +1,5 @@
 import { NO_ORG } from '../messages';
 import {
-  IDPApi,
-  Configuration,
   GithubSlsRestApiRoleResponse,
   GithubSlsRestApiLoginResponse,
 } from '../../api/github-sls-rest-api';
@@ -12,6 +10,7 @@ import { ui } from '../command';
 import { ConfigHelper } from '../helpers/configHelper';
 import { OrgHelper } from '../helpers/orgHelper';
 import { event } from '../helpers/events';
+import { ApiHelper } from '../helpers/apiHelper';
 
 export type ShowSubcommands =
   | 'metadata'
@@ -24,19 +23,19 @@ export type ShowSubcommands =
   | 'orgs'
   | 'config';
 
-export class Show {
+export class ShowCommand {
   scms: Scms;
 
   configHelper: ConfigHelper;
 
   orgHelper: OrgHelper;
 
-  constructor() {
+  constructor(private apiHelper: ApiHelper) {
     this.scms = new Scms();
 
-    this.configHelper = new ConfigHelper();
+    this.configHelper = new ConfigHelper(apiHelper);
 
-    this.orgHelper = new OrgHelper();
+    this.orgHelper = new OrgHelper(apiHelper);
   }
 
   public async handle(
@@ -115,11 +114,7 @@ export class Show {
 
   public async fetchEntityId(org: string): Promise<string> {
     const accessToken = this.scms.getGithubToken();
-    const idpApi = new IDPApi(
-      new Configuration({
-        accessToken: accessToken,
-      }),
-    );
+    const idpApi = this.apiHelper.idpApi(accessToken);
     const { data: metadata } = await idpApi.getOrgMetadata(org);
     const { entityId } = metadata;
     return entityId;
@@ -127,11 +122,7 @@ export class Show {
 
   public async fetchLoginUrl(org: string): Promise<string> {
     const accessToken = this.scms.getGithubToken();
-    const idpApi = new IDPApi(
-      new Configuration({
-        accessToken: accessToken,
-      }),
-    );
+    const idpApi = this.apiHelper.idpApi(accessToken);
     const { data: metadata } = await idpApi.getOrgMetadata(org);
     const { loginUrl } = metadata;
     return loginUrl;
@@ -139,11 +130,7 @@ export class Show {
 
   public async fetchLogoutUrl(org: string): Promise<string> {
     const accessToken = this.scms.getGithubToken();
-    const idpApi = new IDPApi(
-      new Configuration({
-        accessToken: accessToken,
-      }),
-    );
+    const idpApi = this.apiHelper.idpApi(accessToken);
     const { data: metadata } = await idpApi.getOrgMetadata(org);
     const { logoutUrl } = metadata;
     return logoutUrl;
@@ -151,11 +138,7 @@ export class Show {
 
   public async fetchMetadataXml(org: string): Promise<string> {
     const accessToken = this.scms.getGithubToken();
-    const idpApi = new IDPApi(
-      new Configuration({
-        accessToken: accessToken,
-      }),
-    );
+    const idpApi = this.apiHelper.idpApi(accessToken);
     const { data: metadata } = await idpApi.getOrgMetadata(org);
     const { metadataXml } = metadata;
     return metadataXml;
@@ -176,11 +159,7 @@ export class Show {
 
   private async showCertificate(org: string, save?: boolean): Promise<void> {
     const accessToken = this.scms.getGithubToken();
-    const idpApi = new IDPApi(
-      new Configuration({
-        accessToken: accessToken,
-      }),
-    );
+    const idpApi = this.apiHelper.idpApi(accessToken);
     const { data: metadata } = await idpApi.getOrgMetadata(org);
     const { certificate } = metadata;
 
@@ -219,11 +198,7 @@ export class Show {
     refresh?: boolean,
   ): Promise<GithubSlsRestApiRoleResponse[]> {
     const accessToken = this.scms.getGithubToken();
-    const idpApi = new IDPApi(
-      new Configuration({
-        accessToken: accessToken,
-      }),
-    );
+    const idpApi = this.apiHelper.idpApi(accessToken);
     const { data: roles } = await idpApi.listRoles(org, provider, refresh);
     return roles.results;
   }
@@ -255,11 +230,7 @@ export class Show {
     refresh?: boolean,
   ): Promise<GithubSlsRestApiLoginResponse[]> {
     const accessToken = this.scms.getGithubToken();
-    const idpApi = new IDPApi(
-      new Configuration({
-        accessToken: accessToken,
-      }),
-    );
+    const idpApi = this.apiHelper.idpApi(accessToken);
     const { data: logins } = await idpApi.listLogins(org, refresh);
     return logins.results;
   }

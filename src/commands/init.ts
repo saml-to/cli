@@ -4,19 +4,18 @@ import log from 'loglevel';
 import { GITHUB_ACCESS_NEEDED, REPO_DOES_NOT_EXIST } from '../messages';
 import { GithubHelper } from '../helpers/githubHelper';
 import {
-  IDPApi,
-  Configuration,
   GithubSlsRestApiConfigV20220101,
   GithubSlsRestApiConfigV20220101VersionEnum,
 } from '../../api/github-sls-rest-api';
 import { Scms } from '../stores/scms';
-import { Show } from './show';
+import { ShowCommand } from './show';
 import { prompt, ui } from '../command';
 import { RequestError } from '@octokit/request-error';
 import { dump } from 'js-yaml';
 import { Octokit } from '@octokit/rest';
 import { MessagesHelper } from '../helpers/messagesHelper';
 import { event } from '../helpers/events';
+import { ApiHelper } from '../helpers/apiHelper';
 
 export const CONFIG_FILE = 'saml-to.yml';
 
@@ -26,17 +25,17 @@ const EMPTY_CONFIG: GithubSlsRestApiConfigV20220101 = {
   permissions: {},
 };
 
-export class Init {
+export class InitCommand {
   githubHelper: GithubHelper;
 
   scms: Scms;
 
-  show: Show;
+  show: ShowCommand;
 
-  constructor(private messagesHelper: MessagesHelper) {
-    this.githubHelper = new GithubHelper(messagesHelper);
+  constructor(private apiHelper: ApiHelper, private messagesHelper: MessagesHelper) {
+    this.githubHelper = new GithubHelper(apiHelper, messagesHelper);
     this.scms = new Scms();
-    this.show = new Show();
+    this.show = new ShowCommand(apiHelper);
   }
 
   async handle(force = false): Promise<void> {
@@ -229,11 +228,7 @@ ${dump(EMPTY_CONFIG)}
 
   private async registerRepo(org: string, repo: string, force?: boolean): Promise<void> {
     const accessToken = this.scms.getGithubToken();
-    const idpApi = new IDPApi(
-      new Configuration({
-        accessToken: accessToken,
-      }),
-    );
+    const idpApi = this.apiHelper.idpApi(accessToken);
     const { data: result } = await idpApi.setOrgAndRepo(org, repo, force);
     log.debug('Initialized repo', result);
   }

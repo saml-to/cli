@@ -3,7 +3,7 @@ import {
   GithubSlsRestApiNameIdFormatV1,
 } from '../../api/github-sls-rest-api';
 import { prompt, ui } from '../command';
-import { Show } from './show';
+import { ShowCommand } from './show';
 import { load } from 'js-yaml';
 import { CONFIG_FILE } from './init';
 import { ConfigHelper } from '../helpers/configHelper';
@@ -12,6 +12,7 @@ import { GenericHelper } from '../helpers/genericHelper';
 import { MessagesHelper } from '../helpers/messagesHelper';
 import { event } from '../helpers/events';
 import { Scms } from '../stores/scms';
+import { ApiHelper } from '../helpers/apiHelper';
 
 export type AddSubcommands = 'provider' | 'permission';
 
@@ -19,8 +20,8 @@ export type AddNameIdFormats = GithubSlsRestApiNameIdFormatV1 | 'none';
 
 export type AddAttributes = { [key: string]: string };
 
-export class Add {
-  show: Show;
+export class AddCommand {
+  show: ShowCommand;
 
   scms: Scms;
 
@@ -30,12 +31,12 @@ export class Add {
 
   genericHelper: GenericHelper;
 
-  constructor(private messagesHelper: MessagesHelper) {
-    this.show = new Show();
+  constructor(apiHelper: ApiHelper, private messagesHelper: MessagesHelper) {
+    this.show = new ShowCommand(apiHelper);
     this.scms = new Scms();
-    this.configHelper = new ConfigHelper();
-    this.orgHelper = new OrgHelper();
-    this.genericHelper = new GenericHelper(messagesHelper);
+    this.configHelper = new ConfigHelper(apiHelper);
+    this.orgHelper = new OrgHelper(apiHelper);
+    this.genericHelper = new GenericHelper(apiHelper, messagesHelper);
   }
 
   public async handle(

@@ -8,10 +8,11 @@ import { prompt, ui } from '../command';
 import { ConfigHelper } from './configHelper';
 import { Scms } from '../stores/scms';
 import { AddNameIdFormats } from '../commands/add';
-import { Show } from '../commands/show';
+import { ShowCommand } from '../commands/show';
 import { MessagesHelper } from './messagesHelper';
 import { CONFIG_FILE } from '../commands/init';
 import { event } from './events';
+import { ApiHelper } from './apiHelper';
 
 export const trainCase = (str: string): string => {
   if (!str) {
@@ -32,12 +33,12 @@ export class GenericHelper {
 
   scms: Scms;
 
-  show: Show;
+  show: ShowCommand;
 
-  constructor(private messagesHelper: MessagesHelper) {
-    this.configHelper = new ConfigHelper();
+  constructor(apiHelper: ApiHelper, private messagesHelper: MessagesHelper) {
+    this.configHelper = new ConfigHelper(apiHelper);
     this.scms = new Scms();
-    this.show = new Show();
+    this.show = new ShowCommand(apiHelper);
   }
 
   public async promptUsers(provider: string, role?: string, users?: string[]): Promise<string[]> {

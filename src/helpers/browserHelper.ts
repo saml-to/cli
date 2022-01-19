@@ -10,15 +10,23 @@ export const openBrowser = (url: string): Promise<void> => {
       .then((proc) => {
         if (proc.exitCode !== 0) {
           ui.updateBottomBar('');
-          console.log(url);
+          console.log(`Unable to open browser. Please open in a browser window:
+
+${url}`);
           resolve();
         } else {
+          ui.updateBottomBar('');
+          console.log(`Browser opened to ${new URL(url).origin}.
+
+Ctrl+C to exit.`);
           resolve();
         }
       })
       .catch(() => {
         ui.updateBottomBar('');
-        console.log(url);
+        console.log(`Unable to open browser. Please open in a browser window:
+
+${url}`);
       });
   });
 };

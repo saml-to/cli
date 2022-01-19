@@ -1,34 +1,33 @@
 import {
-  IDPApi,
-  Configuration,
   GithubSlsRestApiLoginResponseContainer,
   GithubSlsRestApiLoginResponse,
 } from '../../api/github-sls-rest-api';
 import { ERROR_LOGGING_IN, MULTIPLE_LOGINS, NO_GITHUB_CLIENT } from '../messages';
 import { Scms } from '../stores/scms';
 import axios from 'axios';
-import { Show } from './show';
+import { ShowCommand } from './show';
 import { AwsHelper } from '../helpers/aws/awsHelper';
 import { GithubHelper } from '../helpers/githubHelper';
 import { prompt, ui } from '../command';
 import { MessagesHelper } from '../helpers/messagesHelper';
 import { event } from '../helpers/events';
 import { openBrowser } from '../helpers/browserHelper';
+import { ApiHelper } from '../helpers/apiHelper';
 
-export class Login {
+export class LoginCommand {
   scms: Scms;
 
-  show: Show;
+  show: ShowCommand;
 
   awsHelper: AwsHelper;
 
   githubHelper: GithubHelper;
 
-  constructor(private messagesHelper: MessagesHelper) {
+  constructor(private apiHelper: ApiHelper, private messagesHelper: MessagesHelper) {
     this.scms = new Scms();
-    this.show = new Show();
-    this.awsHelper = new AwsHelper(messagesHelper);
-    this.githubHelper = new GithubHelper(messagesHelper);
+    this.show = new ShowCommand(apiHelper);
+    this.awsHelper = new AwsHelper(apiHelper, messagesHelper);
+    this.githubHelper = new GithubHelper(apiHelper, messagesHelper);
   }
 
   async handle(provider?: string, org?: string): Promise<void> {
@@ -52,11 +51,7 @@ export class Login {
       throw new Error(NO_GITHUB_CLIENT);
     }
 
-    const idpApi = new IDPApi(
-      new Configuration({
-        accessToken: token,
-      }),
-    );
+    const idpApi = this.apiHelper.idpApi(token);
 
     try {
       const { data: response } = await idpApi.providerLogin(provider, org);
