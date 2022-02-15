@@ -1,6 +1,7 @@
 import {
   GithubSlsRestApiSamlResponseContainer,
   GithubSlsRestApiRoleResponse,
+  GithubSlsRestApiAssumeBrowserResponse,
 } from '../../api/github-sls-rest-api';
 import {
   ERROR_ASSUMING_ROLE,
@@ -45,22 +46,22 @@ export class AssumeCommand {
       ui.updateBottomBar(`Assuming ${role}`);
     }
 
-    const token = this.scms.getGithubToken();
-    if (!token) {
-      throw new Error(NO_GITHUB_CLIENT);
-    }
-
     if (!role) {
       throw new Error(`Please specify a role to assume`);
     }
 
-    const idpApi = this.apiHelper.idpApi(token);
-
     try {
-      const { data: response } = await idpApi.assumeRole(role, org, provider);
       if (headless) {
+        const token = this.scms.getGithubToken();
+        if (!token) {
+          throw new Error(NO_GITHUB_CLIENT);
+        }
+        const idpApi = this.apiHelper.idpApi(token);
+        const { data: response } = await idpApi.assumeRole(role, org, provider);
         return await this.assumeTerminal(response);
       } else {
+        const idpApi = this.apiHelper.idpApi();
+        const { data: response } = await idpApi.assumeRoleForBrowser(role, org, provider);
         return await this.assumeBrowser(response);
       }
     } catch (e) {
@@ -77,9 +78,18 @@ export class AssumeCommand {
     }
   }
 
-  private async assumeBrowser(samlResponse: GithubSlsRestApiSamlResponseContainer): Promise<void> {
-    if (samlResponse.browserUri) {
-      await openBrowser(samlResponse.browserUri);
+  private async assumeBrowser(response: GithubSlsRestApiAssumeBrowserResponse): Promise<void> {
+    if (response.browserUri) {
+      const url = new URL(response.browserUri);
+      try {
+        const token = this.scms.getGithubToken();
+        if (token) {
+          url.searchParams.set('token', token);
+        }
+      } catch (e) {
+        // pass
+      }
+      await openBrowser(url.toString());
     } else {
       new Error(`Browser URI is not set.`);
     }

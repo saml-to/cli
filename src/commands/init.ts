@@ -5,7 +5,7 @@ import { GITHUB_ACCESS_NEEDED, REPO_DOES_NOT_EXIST } from '../messages';
 import { GithubHelper } from '../helpers/githubHelper';
 import {
   GithubSlsRestApiConfigV20220101,
-  GithubSlsRestApiConfigV20220101VersionEnum,
+  GithubSlsRestApiSupportedVersions,
 } from '../../api/github-sls-rest-api';
 import { Scms } from '../stores/scms';
 import { ShowCommand } from './show';
@@ -20,7 +20,7 @@ import { ApiHelper } from '../helpers/apiHelper';
 export const CONFIG_FILE = 'saml-to.yml';
 
 const EMPTY_CONFIG: GithubSlsRestApiConfigV20220101 = {
-  version: GithubSlsRestApiConfigV20220101VersionEnum._20220101,
+  version: GithubSlsRestApiSupportedVersions._20220101,
   providers: {},
   permissions: {},
 };
