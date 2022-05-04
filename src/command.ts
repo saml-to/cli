@@ -18,6 +18,9 @@ import BottomBar from 'inquirer/lib/ui/bottom-bar';
 
 export let ui: BottomBar;
 
+// Disables (node:64080) ExperimentalWarning: The Fetch API is an experimental feature. This feature could change at any time
+process.emitWarning = () => {};
+
 if (!process.argv.find((arg) => arg === '--headless')) {
   ui = new BottomBar({ output: process.stderr });
 } else {
@@ -413,7 +416,9 @@ export class Command {
             ui.updateBottomBar('');
             console.error(
               `API Error: ${
-                (error.response && error.response.data && error.response.data.message) ||
+                (error.response &&
+                  error.response.data &&
+                  (error.response.data as { message: string }).message) ||
                 error.message
               }`,
             );

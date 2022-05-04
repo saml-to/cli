@@ -62,7 +62,7 @@ export class GithubHelper {
     const { verification_uri: verificationUri, user_code: userCode } = response.data;
 
     this.messagesHelper.prelogin(scope, org);
-    this.messagesHelper.write(`Please open the browser to ${verificationUri}, and enter the code:
+    this.messagesHelper.write(`Please open the browser to ${verificationUri} and enter the code:
 
 ${userCode}
 

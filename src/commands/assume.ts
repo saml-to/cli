@@ -67,9 +67,16 @@ export class AssumeCommand {
     } catch (e) {
       if (axios.isAxiosError(e) && e.response) {
         if (e.response.status === 403) {
-          throw new Error(ERROR_ASSUMING_ROLE(role, `Reason: ${e.response.data.message}`));
+          throw new Error(
+            ERROR_ASSUMING_ROLE(
+              role,
+              `Reason: ${(e.response.data as { message: string }).message}`,
+            ),
+          );
         } else if (e.response.status === 404) {
-          throw new Error(MULTIPLE_ROLES(role, `Reason: ${e.response.data.message}`));
+          throw new Error(
+            MULTIPLE_ROLES(role, `Reason: ${(e.response.data as { message: string }).message}`),
+          );
         } else {
           throw e;
         }

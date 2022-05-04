@@ -59,9 +59,19 @@ export class LoginCommand {
     } catch (e) {
       if (axios.isAxiosError(e) && e.response) {
         if (e.response.status === 403) {
-          throw new Error(ERROR_LOGGING_IN(provider, `Reason: ${e.response.data.message}`));
+          throw new Error(
+            ERROR_LOGGING_IN(
+              provider,
+              `Reason: ${(e.response.data as { message: string }).message}`,
+            ),
+          );
         } else if (e.response.status === 404) {
-          throw new Error(MULTIPLE_LOGINS(provider, `Reason: ${e.response.data.message}`));
+          throw new Error(
+            MULTIPLE_LOGINS(
+              provider,
+              `Reason: ${(e.response.data as { message: string }).message}`,
+            ),
+          );
         } else {
           throw e;
         }
