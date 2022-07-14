@@ -25,6 +25,7 @@ if (!process.argv.find((arg) => arg === '--headless')) {
   ui = new BottomBar({ output: process.stderr });
 } else {
   ui = {} as BottomBar;
+  // ui.updateBottomBar = () => ui;
 }
 
 process.addListener('SIGINT', () => {
