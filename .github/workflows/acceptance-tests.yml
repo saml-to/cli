@@ -26,5 +26,7 @@ jobs:
         id: test
         run: yarn start assume test-role --headless || echo "::set-output name=returnCode::$?"
       - name: Check Return Code
-        if: ${{ steps.test.output.returnCode != 10 }}
-        run: exit 1
+        if: ${{ steps.test.outputs.returnCode != '10' }}
+        run: |
+          echo "The return code was ${{ steps.test.outputs.returnCode }}"
+          exit 1
