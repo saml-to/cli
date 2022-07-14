@@ -25,7 +25,6 @@ jobs:
       - name: Run Test
         id: test
         run: yarn start assume test-role --headless || echo "::set-output name=returnCode::$?"
-        continue-on-error: true
-      - name: Debug
-        run: echo "${{ toJSON(steps.test) }}"
-      # TODO check return code for accuracy
+      - name: Check Return Code
+        if: ${{ steps.test.output.returnCode != "10" }}
+        run: exit 1
