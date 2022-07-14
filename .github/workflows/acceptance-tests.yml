@@ -27,5 +27,5 @@ jobs:
         run: yarn start assume test-role --headless
         continue-on-error: true
       - name: Debug
-        run: echo "${{ steps.test }}"
+        run: echo "${{ toJSON(steps.test) }}"
       # TODO check return code for accuracy
