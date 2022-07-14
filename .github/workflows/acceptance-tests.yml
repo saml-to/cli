@@ -5,13 +5,17 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   cli-assume-no-auth:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         node: [14, 16, 18]
+        os: ['macos-latest', 'windows-latest', 'ubuntu-latest']
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v3
@@ -19,6 +23,12 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: 'yarn'
       - run: yarn
-      - name: test
-        run: yarn start assume test-role --headless
-      # TODO check return code for accuracy
+      - name: Run Test
+        id: test
+        run: yarn start assume test-role --headless || echo "::set-output name=returnCode::$?"
+        shell: bash
+      - name: Return Code Assertion
+        if: ${{ steps.test.outputs.returnCode != '10' }}
+        run: |
+          echo "The return code was ${{ steps.test.outputs.returnCode }}"
+          exit 1

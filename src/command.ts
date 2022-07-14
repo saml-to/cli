@@ -15,6 +15,8 @@ import PromptUI from 'inquirer/lib/ui/prompt';
 import { version } from '../package.json';
 import { ApiHelper } from './helpers/apiHelper';
 import BottomBar from 'inquirer/lib/ui/bottom-bar';
+import { NOT_LOGGED_IN } from './messages';
+import { ErrorWithReturnCode, RETURN_CODE_NOT_LOGGED_IN } from './errors';
 
 export let ui: BottomBar;
 
@@ -25,7 +27,7 @@ if (!process.argv.find((arg) => arg === '--headless')) {
   ui = new BottomBar({ output: process.stderr });
 } else {
   ui = {} as BottomBar;
-  // ui.updateBottomBar = () => ui;
+  ui.updateBottomBar = () => ui;
 }
 
 process.addListener('SIGINT', () => {
@@ -165,13 +167,16 @@ export class Command {
         command: 'assume [role]',
         describe: 'Assume a role',
         handler: ({ role, org, provider, headless }) =>
-          this.loginWrapper('user:email', () =>
-            this.assume.handle(
-              role as string,
-              headless as boolean,
-              org as string | undefined,
-              provider as string | undefined,
-            ),
+          this.loginWrapper(
+            'user:email',
+            () =>
+              this.assume.handle(
+                role as string,
+                headless as boolean,
+                org as string | undefined,
+                provider as string | undefined,
+              ),
+            headless as boolean,
           ),
         builder: {
           role: {
@@ -410,9 +415,7 @@ export class Command {
         if (axios.isAxiosError(error)) {
           if (error.response && error.response.status === 401) {
             ui.updateBottomBar('');
-            console.error(
-              `Unauthorized. Please generate a new GitHub Identity using the \`${this.messagesHelper.processName} login\` command`,
-            );
+            console.error(NOT_LOGGED_IN(this.messagesHelper.processName, 'github'));
           } else {
             ui.updateBottomBar('');
             console.error(
@@ -436,14 +439,25 @@ export class Command {
     }
   }
 
-  private loginWrapper = async (scope: string, fn: () => Promise<void>): Promise<void> => {
+  private loginWrapper = async (
+    scope: string,
+    fn: () => Promise<void>,
+    headless = false,
+  ): Promise<void> => {
     try {
       await fn();
     } catch (e) {
       if (e instanceof NoTokenError) {
-        const githubLogin = new GithubHelper(this.apiHelper, this.messagesHelper);
-        await githubLogin.promptLogin(scope);
-        await fn();
+        if (!headless) {
+          const githubLogin = new GithubHelper(this.apiHelper, this.messagesHelper);
+          await githubLogin.promptLogin(scope);
+          await fn();
+        } else {
+          throw new ErrorWithReturnCode(
+            RETURN_CODE_NOT_LOGGED_IN,
+            NOT_LOGGED_IN(this.messagesHelper.processName, 'github'),
+          );
+        }
       } else {
         throw e;
       }
