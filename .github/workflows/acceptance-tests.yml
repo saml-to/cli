@@ -24,7 +24,9 @@ jobs:
       - run: yarn
       - name: Run Test
         id: test
-        run: yarn start assume test-role --headless
+        run: >
+          yarn start assume test-role --headless
+          echo "::set-output name=returnCode::$?"
         continue-on-error: true
       - name: Debug
         run: echo "${{ toJSON(steps.test) }}"
