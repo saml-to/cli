@@ -1,5 +1,7 @@
 export const NO_GITHUB_CLIENT = 'There was an unknown issue loading GitHub client libraries';
 export const NO_ORG = `No organization is set, please use the \`--org\` flag and re-run the command`;
+export const NOT_LOGGED_IN = (processName: string, provider: string): string =>
+  `Invalid or missing token. Please login using the \`${processName} login ${provider}\` command to save your identity to this system.`;
 export const ERROR_LOADING_FILE = (file: string, error: Error): string =>
   `Error loading file: ${file}: ${error.message}.`;
 export const ERROR_ASSUMING_ROLE = (role: string, message: string): string =>

@@ -39,6 +39,11 @@ export class LoginCommand {
       org = choice.org;
     }
 
+    if (provider === 'github') {
+      await this.githubHelper.promptLogin('user:email', org);
+      return;
+    }
+
     let message = `Logging into ${provider}`;
     if (org) {
       message = `${message} (org: ${org})`;
