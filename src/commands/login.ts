@@ -30,7 +30,7 @@ export class LoginCommand {
     this.githubHelper = new GithubHelper(apiHelper, messagesHelper);
   }
 
-  async handle(provider?: string, org?: string): Promise<void> {
+  async handle(provider?: string, org?: string, withToken?: string): Promise<void> {
     event(this.scms, 'login', undefined, org);
 
     if (!provider) {
@@ -40,6 +40,10 @@ export class LoginCommand {
     }
 
     if (provider === 'github') {
+      if (withToken) {
+        this.scms.saveGithubToken(withToken);
+        return;
+      }
       await this.githubHelper.promptLogin('user:email', org);
       return;
     }
