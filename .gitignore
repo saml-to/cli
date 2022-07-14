@@ -1,6 +1,5 @@
 node_modules
 externals
-/api/**/*
 
 /build/**/*
 /dist/**/*.map
