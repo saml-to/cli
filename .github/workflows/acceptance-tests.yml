@@ -23,11 +23,11 @@ jobs:
           cache: 'yarn'
       - run: yarn
       - name: Run Test
-        id: test
-        run: |
-          yarn start assume test-role --headless
-          echo "::set-output name=returnCode::$?"
+        run: yarn start assume test-role --headless
         continue-on-error: true
+      - name: Set Output
+        id: output
+        run: echo "::set-output name=returnCode::$?"
       - name: Debug
-        run: echo "${{ toJSON(steps.test) }}"
+        run: echo "${{ toJSON(steps.output) }}"
       # TODO check return code for accuracy
