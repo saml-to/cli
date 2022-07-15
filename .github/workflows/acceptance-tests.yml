@@ -10,11 +10,18 @@ on:
       - main
 
 jobs:
-  cli-assume-no-auth:
+  assume-fail:
     strategy:
       matrix:
         node: [14, 16, 18]
-        os: ['macos-latest', 'windows-latest', 'ubuntu-latest']
+        os: ['macos-latest', 'ubuntu-latest'] # TODO add windows-latest
+        role:
+          - doesnotexist
+          - arn:aws:iam::656716386475:role/doesnotexist
+          - arn:aws:iam::000000000000:role/doesnotexist
+        flags:
+          - '--dev --provider aws-nonlive'
+          - '--provider aws'
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -23,12 +30,58 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: 'yarn'
       - run: yarn
-      - name: Run Test
-        id: test
-        run: yarn start assume test-role --headless || echo "::set-output name=returnCode::$?"
+      - name: Assume (No-Auth)
+        id: assume_no_auth
+        run: yarn start assume ${{ matrix.role }} --headless ${{ matrix.flags }} || echo "::set-output name=returnCode::$?"
         shell: bash
-      - name: Return Code Assertion
-        if: ${{ steps.test.outputs.returnCode != '10' }}
+      - name: Assume (No-Auth) Assertion (Success == Skipped)
+        if: ${{ steps.assume_no_auth.outputs.returnCode != '10' }}
         run: |
-          echo "The return code was ${{ steps.test.outputs.returnCode }}"
+          echo "The return code was ${{ steps.assume_no_auth.outputs.returnCode }}"
+          exit 1
+      - name: Login
+        id: login
+        run: yarn start login github --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} ${{ matrix.flags }}]
+        shell: bash
+      - name: Assume (User Email PAT)
+        id: assume_user_email_pat
+        run: yarn start assume ${{ matrix.role }} --headless ${{ matrix.flags }} || echo "::set-output name=returnCode::$?"
+        shell: bash
+      - name: Assume (User Email PAT) Assertion (Success == Skipped)
+        if: ${{ steps.assume_user_email_pat.outputs.returnCode != '255' }}
+        run: |
+          echo "The return code was ${{ steps.assume_user_email_pat.outputs.returnCode }}"
+          exit 1
+
+  assume-success:
+    strategy:
+      matrix:
+        node: [14, 16, 18]
+        os: ['macos-latest', 'ubuntu-latest'] # TODO add windows-latest
+        role:
+          - readonly
+          - arn:aws:iam::656716386475:role/readonly
+        flags:
+          - '--dev --provider aws-nonlive'
+          - '--provider aws' # TODO Split tests for live/nonlive so this can be dropped
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+      - run: yarn
+      - name: Login
+        id: login
+        run: yarn start login github --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} ${{ matrix.flags }}
+        shell: bash
+      - name: Assume (User Email PAT)
+        id: assume_user_email_pat
+        run: yarn start assume ${{ matrix.role }} --headless ${{ matrix.flags }} || echo "::set-output name=returnCode::$?"
+        shell: bash
+      - name: Assume (User Email PAT) Assertion (Success == Skipped)
+        if: ${{ steps.assume_user_email_pat.outputs.returnCode != '0' }}
+        run: |
+          echo "The return code was ${{ steps.assume_user_email_pat.outputs.returnCode }}"
           exit 1

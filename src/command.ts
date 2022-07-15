@@ -146,9 +146,13 @@ export class Command {
       .command({
         command: 'login [provider]',
         describe: `Login to a provider`,
-        handler: ({ org, provider }) =>
+        handler: ({ org, provider, withToken }) =>
           this.loginWrapper('user:email', () =>
-            this.login.handle(provider as string | undefined, org as string | undefined),
+            this.login.handle(
+              provider as string | undefined,
+              org as string | undefined,
+              withToken as string | undefined,
+            ),
           ),
         builder: {
           provider: {
@@ -160,6 +164,11 @@ export class Command {
             demand: false,
             type: 'string',
             description: 'Specify an organization',
+          },
+          withToken: {
+            demand: false,
+            type: 'string',
+            description: 'Skip Device Authentication and save the provided token to ~/.saml-to/',
           },
         },
       })
