@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         node: [14, 16, 18]
-        os: ['macos-latest', 'windows-latest', 'ubuntu-latest']
+        os: ['macos-latest', 'ubuntu-latest'] # TODO add windows-latest
         role:
           - doesnotexist
           - arn:aws:iam::656716386475:role/doesnotexist
@@ -57,7 +57,7 @@ jobs:
     strategy:
       matrix:
         node: [14, 16, 18]
-        os: ['macos-latest', 'windows-latest', 'ubuntu-latest']
+        os: ['macos-latest', 'ubuntu-latest'] # TODO add windows-latest
         role:
           - readonly
           - arn:aws:iam::656716386475:role/readonly
