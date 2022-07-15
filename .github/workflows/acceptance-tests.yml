@@ -21,7 +21,7 @@ jobs:
           - arn:aws:iam::000000000000:role/doesnotexist
         flags:
           - '--dev --provider aws-nonlive'
-          - ''
+          - '--provider aws'
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -63,7 +63,7 @@ jobs:
           - arn:aws:iam::656716386475:role/readonly
         flags:
           - '--dev --provider aws-nonlive'
-          - ''
+          - '--provider aws' # TODO Split tests for live/nonlive so this can be dropped
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
