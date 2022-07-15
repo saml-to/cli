@@ -20,7 +20,7 @@ jobs:
           - arn:aws:iam::656716386475:role/doesnotexist
           - arn:aws:iam::000000000000:role/doesnotexist
         flags:
-          - '--dev'
+          - '--dev --provider aws-nonlive'
           - ''
     runs-on: ${{ matrix.os }}
     steps:
@@ -62,7 +62,7 @@ jobs:
           - readonly
           - arn:aws:iam::656716386475:role/readonly
         flags:
-          - '--dev'
+          - '--dev --provider aws-nonlive'
           - ''
     runs-on: ${{ matrix.os }}
     steps:
