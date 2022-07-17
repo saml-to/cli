@@ -10,6 +10,8 @@ import { GenericHelper } from '../genericHelper';
 import { STS } from '@aws-sdk/client-sts';
 import { MessagesHelper } from '../messagesHelper';
 import { ApiHelper } from '../apiHelper';
+import { exec } from '../execHelper';
+import moment from 'moment';
 
 export class AwsHelper {
   configHelper: ConfigHelper;
@@ -156,12 +158,21 @@ ${githubLogins.map((l) => `- ${l}`)}`,
     );
   }
 
-  async assumeAws(samlResponse: GithubSlsRestApiSamlResponseContainer): Promise<void> {
+  async assumeAws(
+    samlResponse: GithubSlsRestApiSamlResponseContainer,
+    save?: string,
+    headless?: boolean,
+  ): Promise<void> {
     const sts = new STS({ region: 'us-east-1' });
     const opts = samlResponse.sdkOptions as GithubSlsRestApiAwsAssumeSdkOptions;
     if (!opts) {
       throw new Error('Missing sdk options from saml response');
     }
+
+    if (save) {
+      ui.updateBottomBar(`Updating AWS '${save}' Profile...`);
+    }
+
     const response = await sts.assumeRoleWithSAML({
       ...opts,
       SAMLAssertion: samlResponse.samlResponse,
@@ -174,8 +185,44 @@ ${githubLogins.map((l) => `- ${l}`)}`,
     ) {
       throw new Error('Missing credentials');
     }
+
+    const region = process.env.AWS_DEFAULT_REGION || 'us-east-1';
+
+    if (save) {
+      const base = ['aws', 'configure'];
+      if (save !== 'default') {
+        base.push('--profile', save);
+      }
+      base.push('set');
+      await exec([...base, 'region', region]);
+      await exec([...base, 'aws_access_key_id', response.Credentials.AccessKeyId]);
+      await exec([...base, 'aws_secret_access_key', response.Credentials.SecretAccessKey]);
+      await exec([...base, 'aws_session_token', response.Credentials.SessionToken]);
+
+      if (headless) {
+        this.genericHelper.outputEnv({
+          AWS_PROFILE: save,
+        });
+        return;
+      } else {
+        ui.updateBottomBar('');
+        console.log(
+          `
+⚠️ Credentials will expire ${moment(response.Credentials.Expiration).fromNow()}!`,
+        );
+        console.log(`
+You can now run \`aws\` commands such as:
+
+aws sts get-caller-identity --profile ${save}
+aws ec2 describe-instances --profile ${save}
+`);
+      }
+
+      return;
+    }
+
     this.genericHelper.outputEnv({
-      AWS_DEFAULT_REGION: 'us-east-1',
+      AWS_DEFAULT_REGION: region,
       AWS_ACCESS_KEY_ID: response.Credentials.AccessKeyId,
       AWS_SECRET_ACCESS_KEY: response.Credentials.SecretAccessKey,
       AWS_SESSION_TOKEN: response.Credentials.SessionToken,

@@ -32,7 +32,13 @@ export class AssumeCommand {
     this.awsHelper = new AwsHelper(apiHelper, messagesHelper);
   }
 
-  async handle(role?: string, headless = false, org?: string, provider?: string): Promise<void> {
+  async handle(
+    role?: string,
+    headless = false,
+    org?: string,
+    provider?: string,
+    save?: string,
+  ): Promise<void> {
     event(this.scms, 'assume', undefined, org);
 
     if (!role && !headless) {
@@ -50,15 +56,19 @@ export class AssumeCommand {
       throw new Error(`Please specify a role to assume`);
     }
 
+    if (save !== undefined && !save) {
+      save = role;
+    }
+
     try {
-      if (headless) {
+      if (headless || save) {
         const token = this.scms.getGithubToken();
         if (!token) {
           throw new Error(NO_GITHUB_CLIENT);
         }
         const idpApi = this.apiHelper.idpApi(token);
         const { data: response } = await idpApi.assumeRole(role, org, provider);
-        return await this.assumeTerminal(response);
+        return await this.assumeTerminal(response, save, headless);
       } else {
         const idpApi = this.apiHelper.idpApi();
         const { data: response } = await idpApi.assumeRoleForBrowser(role, org, provider);
@@ -102,9 +112,13 @@ export class AssumeCommand {
     }
   }
 
-  private async assumeTerminal(samlResponse: GithubSlsRestApiSamlResponseContainer): Promise<void> {
+  private async assumeTerminal(
+    samlResponse: GithubSlsRestApiSamlResponseContainer,
+    save?: string,
+    headless?: boolean,
+  ): Promise<void> {
     if (samlResponse.recipient.endsWith('.amazon.com/saml')) {
-      return this.awsHelper.assumeAws(samlResponse);
+      return this.awsHelper.assumeAws(samlResponse, save, headless);
     }
 
     throw new Error(TERMINAL_NOT_SUPPORTED(samlResponse.provider, samlResponse.recipient));
