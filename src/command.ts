@@ -175,7 +175,7 @@ export class Command {
       .command({
         command: 'assume [role]',
         describe: 'Assume a role',
-        handler: ({ role, org, provider, headless }) =>
+        handler: ({ role, org, provider, headless, save }) =>
           this.loginWrapper(
             'user:email',
             () =>
@@ -184,6 +184,7 @@ export class Command {
                 headless as boolean,
                 org as string | undefined,
                 provider as string | undefined,
+                save as string | undefined,
               ),
             headless as boolean,
           ),
@@ -203,6 +204,12 @@ export class Command {
             type: 'boolean',
             default: false,
             description: 'Output access credentials to the terminal',
+          },
+          save: {
+            demand: false,
+            type: 'string',
+            description:
+              'Similar to headless, but saves the CLI configuration for a provider to the config file',
           },
           provider: {
             demand: false,

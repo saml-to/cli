@@ -85,3 +85,10 @@ jobs:
         run: |
           echo "The return code was ${{ steps.assume_user_email_pat.outputs.returnCode }}"
           exit 1
+      - name: Assume (User Email PAT) and Save Profile
+        id: assume_user_email_pat_profile
+        run: yarn start assume ${{ matrix.role }} ${{ matrix.flags }} --save
+        shell: bash
+      - name: Test Assumed Role using Saved Profile
+        run: aws sts get-caller-identity --profile ${{ matrix.role }}
+        shell: bash
