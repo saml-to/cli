@@ -70,6 +70,7 @@ export class AssumeCommand {
         const { data: response } = await idpApi.assumeRole(role, org, provider);
         return await this.assumeTerminal(response, save, headless);
       } else {
+        this.scms.getGithubToken();
         const idpApi = this.apiHelper.idpApi();
         const { data: response } = await idpApi.assumeRoleForBrowser(role, org, provider);
         return await this.assumeBrowser(response);
