@@ -37,20 +37,20 @@ Please make sure the following is installed:
 
 ```bash
 npm install -g saml-to
-saml-to --help
+saml-to assume
 ```
 
 **`yarn`**:
 
 ```bash
 yarn global add saml-to
-saml-to --help
+saml-to assume
 ```
 
 **`npx`**:
 
 ```bash
-npx saml-to --help
+npx saml-to assume
 ```
 
 ### Using Homebrew (MacOS)
@@ -58,6 +58,7 @@ npx saml-to --help
 ```bash
 brew tap saml-to/tap
 brew install saml-to
+saml-to assume
 ```
 
 ## Getting Started
@@ -86,13 +87,13 @@ Interactive prompt for roles to assume:
 saml-to assume
 ```
 
-Or, if the role name is known:
+Or, if the full role name is known:
 
 ```bash
 saml-to assume arn:aws:iam::123456789012:role/some-role
 ```
 
-Or, use the shorthand:
+Alternatively, use the shorthand:
 
 ```bash
 # Any distinct part of the role names in from saml-to list-roles will match
