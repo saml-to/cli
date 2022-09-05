@@ -57,7 +57,7 @@ export class Scms {
   }
 
   public saveGithubToken(token: string): string {
-    fs.writeFileSync(this.githubFile, JSON.stringify({ token } as GithubFile));
+    fs.writeFileSync(this.githubFile, JSON.stringify({ token } as GithubFile), { mode: 0o600 });
     ui.updateBottomBar('');
     console.log(`Token cached in: ${this.githubFile}`);
     return this.githubFile;
