@@ -3,6 +3,9 @@ import { platform } from 'process';
 import { ui } from '../command';
 
 export const openBrowser = (url: string): Promise<void> => {
+  const displayUrl = new URL(url);
+  displayUrl.searchParams.delete('token');
+
   return new Promise((resolve) => {
     ui.updateBottomBar('');
     open(url, {
@@ -22,7 +25,9 @@ ${url}`);
           resolve();
         } else {
           ui.updateBottomBar('');
-          console.log(`Browser opened to ${new URL(url).origin}.
+          console.log(`Browser opened to:
+
+${displayUrl.toString()}
 
 Ctrl+C to exit.`);
           resolve();

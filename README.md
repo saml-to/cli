@@ -8,77 +8,103 @@
 
 ## Introduction
 
-This is the CLI for [SAML.to](https://saml.to). It allows for command-line based login and role assumption, as well as initial setup and adminstration.
+This is the CLI for [SAML.to](https://saml.to). It allows for command-line AWS role assumption.
 
 ```
-npx saml-to [command]
+saml-to [command]
 
 Commands:
-  saml-to list-logins              Show providers that are available to login
-  saml-to list-roles               Show roles that are available to assume
-  saml-to login [provider]         Login to a provider
-  saml-to assume [role]            Assume a role
-  saml-to init                     (Administrative) Initialize SAML.to with a GitHub Repository
-  saml-to add [type] [name]        (Administrative) Add providers or permissions to the configuration
-  saml-to set [name] [subcommand]  (Administrative) Set a provider setting (e.g. provisioning
-  saml-to show [subcommand]        (Administrative) Show various configurations (metadata, certificate, entityId, config, etc.)
+  saml-to list-roles        Show roles that are available to assume
+  saml-to login [provider]  Login to a provider
+  saml-to assume [role]     Assume a role
 
 Options:
-  --version  Show version number  [boolean]
   --help     Show help  [boolean]
+  --version  Show version number  [boolean]
 ```
 
-#### Prerequisties
+## Installation
 
-- NodeJS v14+ Installed Locally
-- `npx` avaliable on the `$PATH`
+Please make sure the following is installed:
 
-## Getting Started
+- NodeJS v14+
+- `npm` or `yarn` or `npx` avaliable on the `$PATH`
+- (MacOS Alternative) Homebrew available on the `$PATH`
 
-The CLI can be run with the `npx` command:
+### Using `npm` or `yarn` or `npx`
 
-```bash
-npx saml-to [--help]
-```
-
-Add the `--help` flag to any command for available options.
-
-#### Installing Globally
-
-The CLI can be installed globally as well:
+**`npm`**:
 
 ```bash
 npm install -g saml-to
 saml-to --help
 ```
 
-### Login and Assume Roles
-
-These commands will interactively prompt for Logins or Roles to assume:
+**`yarn`**:
 
 ```bash
-npx saml-to login
+yarn global add saml-to
+saml-to --help
 ```
 
-AND/OR
+**`npx`**:
 
 ```bash
-npx saml-to assume
+npx saml-to --help
 ```
 
-Also, check out the documentation for [`login`](https://docs.saml.to/usage/cli/login) and [`assume`](https://docs.saml.to/usage/cli/assume).
+### Using Homebrew (MacOS)
 
-If no logins or roles are available, complete the [initial setup](#Initial-Setup).
+```bash
+brew tap saml-to/tap
+brew install saml-to
+```
+
+## Getting Started
+
+Once [the CLI is installed](#installation), run the following commands to login and assume roles:
+
+```bash
+# Saves a GitHub token with a user:email scope to ~/.saml-to/github-token.json
+saml-to login github
+```
+
+```bash
+# List available roles to assume
+saml-to list-roles
+```
+
+If no logins or roles are available, an administrator for an AWS account should complete the [initial setup](#Initial-Setup).
+
+Add the `--help` flag to any command for available options.
+
+### Assuming Roles
+
+Interactive prompt for roles to assume:
+
+```bash
+saml-to assume
+```
+
+Or, if the role name is known:
+
+```bash
+saml-to assume arn:aws:iam::123456789012:role/some-role
+```
+
+Or, use the shorthand:
+
+```bash
+# Any distinct part of the role names in from saml-to list-roles will match
+saml-to assume some-role # match by the role name
+saml-to assume 123456789012 # match by the account ID
+```
+
+Check out the documentation for [`assume`](https://docs.saml.to/usage/cli/assume).
 
 ## Initial Setup
 
-Run the following command for interactive prompts configure a repository for SAML.to:
-
-```bash
-npx saml-to init
-```
-
-More information can be found on the [website](https://saml.to) and [docs](https://docs.saml.to/usage/cli/init).
+Visit [SAML.to Install](https://saml.to/install) to get started by connecting a GitHub User or Organization to an AWS Account.
 
 ## Reporting Issues
 

@@ -2,13 +2,13 @@ import { hideBin } from 'yargs/helpers';
 import yargs from 'yargs';
 import axios from 'axios';
 import { AssumeCommand } from './commands/assume';
-import { InitCommand } from './commands/init';
+// import { InitCommand } from './commands/init';
 import { ShowCommand, ShowSubcommands } from './commands/show';
-import { ProvisioningTypes, SetCommand, SetHandleOpts, SetSubcommands } from './commands/set';
+// import { ProvisioningTypes, SetCommand, SetHandleOpts, SetSubcommands } from './commands/set';
 import inquirer, { QuestionCollection } from 'inquirer';
 import { NoTokenError } from './stores/scms';
 import { GithubHelper } from './helpers/githubHelper';
-import { AddCommand, AddAttributes, AddNameIdFormats, AddSubcommands } from './commands/add';
+// import { AddCommand, AddAttributes, AddNameIdFormats, AddSubcommands } from './commands/add';
 import { LoginCommand } from './commands/login';
 import { MessagesHelper } from './helpers/messagesHelper';
 import PromptUI from 'inquirer/lib/ui/prompt';
@@ -55,61 +55,61 @@ export class Command {
 
   private login: LoginCommand;
 
-  private init: InitCommand;
+  // private init: InitCommand;
 
   private show: ShowCommand;
 
-  private add: AddCommand;
+  // private add: AddCommand;
 
-  private set: SetCommand;
+  // private set: SetCommand;
 
   constructor(argv: string[]) {
     this.apiHelper = new ApiHelper(argv);
     this.messagesHelper = new MessagesHelper(argv);
     this.assume = new AssumeCommand(this.apiHelper, this.messagesHelper);
     this.login = new LoginCommand(this.apiHelper, this.messagesHelper);
-    this.init = new InitCommand(this.apiHelper, this.messagesHelper);
+    // this.init = new InitCommand(this.apiHelper, this.messagesHelper);
     this.show = new ShowCommand(this.apiHelper);
-    this.add = new AddCommand(this.apiHelper, this.messagesHelper);
-    this.set = new SetCommand(this.apiHelper);
+    // this.add = new AddCommand(this.apiHelper, this.messagesHelper);
+    // this.set = new SetCommand(this.apiHelper);
   }
 
   public async run(argv: string[]): Promise<void> {
     const ya = yargs
       .scriptName(this.messagesHelper.processName)
-      .command({
-        command: 'list-logins',
-        describe: `Show providers that are available to login`,
-        handler: ({ org, provider, refresh }) =>
-          this.loginWrapper('user:email', () =>
-            this.show.handle(
-              'logins' as ShowSubcommands,
-              org as string | undefined,
-              provider as string | undefined,
-              false,
-              refresh as boolean | undefined,
-              false,
-            ),
-          ),
-        builder: {
-          org: {
-            demand: false,
-            type: 'string',
-            description: 'Specify an organization',
-          },
-          provider: {
-            demand: false,
-            type: 'string',
-            description: 'Specify an provider',
-          },
-          refresh: {
-            demand: false,
-            type: 'boolean',
-            default: false,
-            description: 'Refresh cached logins from source control',
-          },
-        },
-      })
+      // .command({
+      //   command: 'list-logins',
+      //   describe: `Show providers that are available to login`,
+      //   handler: ({ org, provider, refresh }) =>
+      //     this.loginWrapper('user:email', () =>
+      //       this.show.handle(
+      //         'logins' as ShowSubcommands,
+      //         org as string | undefined,
+      //         provider as string | undefined,
+      //         false,
+      //         refresh as boolean | undefined,
+      //         false,
+      //       ),
+      //     ),
+      //   builder: {
+      //     org: {
+      //       demand: false,
+      //       type: 'string',
+      //       description: 'Specify an organization',
+      //     },
+      //     provider: {
+      //       demand: false,
+      //       type: 'string',
+      //       description: 'Specify an provider',
+      //     },
+      //     refresh: {
+      //       demand: false,
+      //       type: 'boolean',
+      //       default: false,
+      //       description: 'Refresh cached logins from source control',
+      //     },
+      //   },
+      // })
       .command({
         command: 'list-roles',
         describe: `Show roles that are available to assume`,
@@ -218,212 +218,212 @@ export class Command {
           },
         },
       })
-      .command({
-        command: 'init',
-        describe: '(Administrative) Initialize SAML.to with a GitHub Repository',
-        handler: ({ force }) => this.init.handle(force as boolean | undefined),
-        builder: {
-          force: {
-            demand: false,
-            type: 'boolean',
-            default: false,
-          },
-        },
-      })
-      .command({
-        command: 'add [type] [name]',
-        describe: '(Administrative) Add providers or permissions to the configuration',
-        handler: ({
-          type,
-          name,
-          entityId,
-          acsUrl,
-          loginUrl,
-          nameId,
-          nameIdFormat,
-          role,
-          attribute,
-        }) =>
-          this.loginWrapper('repo', () =>
-            this.add.handle(
-              type as AddSubcommands,
-              name as string | undefined,
-              entityId as string | undefined,
-              acsUrl as string | undefined,
-              loginUrl as string | undefined,
-              nameId as string | undefined,
-              (nameIdFormat as AddNameIdFormats) || 'none',
-              role as string | undefined,
-              attribute as AddAttributes | undefined,
-            ),
-          ),
-        builder: {
-          type: {
-            demand: true,
-            type: 'string',
-            choices: ['provider', 'permission'] as AddSubcommands[],
-          },
-          name: {
-            demand: false,
-            type: 'string',
-          },
-          entityId: {
-            demand: false,
-            type: 'string',
-          },
-          acsUrl: {
-            demand: false,
-            type: 'string',
-          },
-          loginUrl: {
-            demand: false,
-            type: 'string',
-          },
-          nameId: {
-            demand: false,
-            type: 'string',
-          },
-          nameIdFormat: {
-            demand: false,
-            type: 'string',
-            choices: ['id', 'login', 'email', 'emailV2', 'none'] as AddNameIdFormats[],
-          },
-          role: {
-            demand: false,
-            type: 'string',
-          },
-          attribute: {
-            demand: false,
-            type: 'array',
-            description: 'Additional addtributes in key=value pairs',
-            coerce: (values) => {
-              if (!values || !Array.isArray(values)) {
-                return;
-              }
-              return values.reduce((acc, value: string) => {
-                try {
-                  const ix = value.indexOf('=');
-                  if (ix === -1) {
-                    throw new Error(`Attributes must be in key=value format`);
-                  }
-                  const k = value.substring(0, ix);
-                  const v = value
-                    .substring(ix + 1)
-                    .replace(/"(.*)"$/, '$1')
-                    .replace(/'(.*)'$/, '$1');
-                  return {
-                    ...acc,
-                    [k]: v,
-                  };
-                } catch (e) {
-                  if (e instanceof Error) {
-                    throw new Error(`Error parsing ${value}: ${e.message}`);
-                  }
-                }
-              }, {} as AddAttributes);
-            },
-          },
-        },
-      })
-      .command({
-        command: 'set [name] [subcommand]',
-        describe: '(Administrative) Set a provider setting (e.g. provisioning)',
-        handler: ({ name, subcommand, type, endpoint, token }) =>
-          this.loginWrapper('repo', () =>
-            this.set.handle(
-              subcommand as SetSubcommands,
-              name as string,
-              {
-                type: type as ProvisioningTypes | undefined,
-                endpoint: endpoint as string | undefined,
-                token: token as string | undefined,
-              } as SetHandleOpts,
-            ),
-          ),
-        builder: {
-          name: {
-            demand: true,
-            type: 'string',
-          },
-          subcommand: {
-            demand: true,
-            type: 'string',
-            choices: ['provisioning'] as SetSubcommands[],
-          },
-          type: {
-            demand: false,
-            type: 'string',
-            choices: ['scim'] as ProvisioningTypes[],
-          },
-          endpoint: {
-            demand: false,
-            type: 'string',
-          },
-          token: {
-            demand: false,
-            type: 'string',
-          },
-        },
-      })
-      .command({
-        command: 'show [subcommand]',
-        describe: `(Administrative) Show various configurations (metadata, certificate, entityId, config, etc.)`,
-        handler: ({ org, provider, subcommand, save, refresh, raw }) =>
-          this.loginWrapper('user:email', async () =>
-            this.show.handle(
-              subcommand as ShowSubcommands,
-              org as string | undefined,
-              provider as string | undefined,
-              save as boolean | undefined,
-              refresh as boolean | undefined,
-              raw as boolean | undefined,
-            ),
-          ),
-        builder: {
-          subcommand: {
-            demand: true,
-            type: 'string',
-            choices: [
-              'metadata',
-              'certificate',
-              'entityId',
-              'loginUrl',
-              'logoutUrl',
-              'config',
-              'roles',
-              'logins',
-              'orgs',
-            ] as ShowSubcommands[],
-          },
-          org: {
-            demand: false,
-            type: 'string',
-            description: 'Specify an organization',
-          },
-          provider: {
-            demand: false,
-            type: 'string',
-            description: 'Specify a provider',
-          },
-          save: {
-            demand: false,
-            type: 'boolean',
-            description: 'Output to a file',
-          },
-          refresh: {
-            demand: false,
-            type: 'boolean',
-            default: false,
-            description: 'Refresh backend config',
-          },
-          raw: {
-            demand: false,
-            type: 'boolean',
-            default: false,
-            description: 'For `config` subcommand, show raw configuration',
-          },
-        },
-      })
+      // .command({
+      //   command: 'init',
+      //   describe: '(Administrative) Initialize SAML.to with a GitHub Repository',
+      //   handler: ({ force }) => this.init.handle(force as boolean | undefined),
+      //   builder: {
+      //     force: {
+      //       demand: false,
+      //       type: 'boolean',
+      //       default: false,
+      //     },
+      //   },
+      // })
+      // .command({
+      //   command: 'add [type] [name]',
+      //   describe: '(Administrative) Add providers or permissions to the configuration',
+      //   handler: ({
+      //     type,
+      //     name,
+      //     entityId,
+      //     acsUrl,
+      //     loginUrl,
+      //     nameId,
+      //     nameIdFormat,
+      //     role,
+      //     attribute,
+      //   }) =>
+      //     this.loginWrapper('repo', () =>
+      //       this.add.handle(
+      //         type as AddSubcommands,
+      //         name as string | undefined,
+      //         entityId as string | undefined,
+      //         acsUrl as string | undefined,
+      //         loginUrl as string | undefined,
+      //         nameId as string | undefined,
+      //         (nameIdFormat as AddNameIdFormats) || 'none',
+      //         role as string | undefined,
+      //         attribute as AddAttributes | undefined,
+      //       ),
+      //     ),
+      //   builder: {
+      //     type: {
+      //       demand: true,
+      //       type: 'string',
+      //       choices: ['provider', 'permission'] as AddSubcommands[],
+      //     },
+      //     name: {
+      //       demand: false,
+      //       type: 'string',
+      //     },
+      //     entityId: {
+      //       demand: false,
+      //       type: 'string',
+      //     },
+      //     acsUrl: {
+      //       demand: false,
+      //       type: 'string',
+      //     },
+      //     loginUrl: {
+      //       demand: false,
+      //       type: 'string',
+      //     },
+      //     nameId: {
+      //       demand: false,
+      //       type: 'string',
+      //     },
+      //     nameIdFormat: {
+      //       demand: false,
+      //       type: 'string',
+      //       choices: ['id', 'login', 'email', 'emailV2', 'none'] as AddNameIdFormats[],
+      //     },
+      //     role: {
+      //       demand: false,
+      //       type: 'string',
+      //     },
+      //     attribute: {
+      //       demand: false,
+      //       type: 'array',
+      //       description: 'Additional addtributes in key=value pairs',
+      //       coerce: (values) => {
+      //         if (!values || !Array.isArray(values)) {
+      //           return;
+      //         }
+      //         return values.reduce((acc, value: string) => {
+      //           try {
+      //             const ix = value.indexOf('=');
+      //             if (ix === -1) {
+      //               throw new Error(`Attributes must be in key=value format`);
+      //             }
+      //             const k = value.substring(0, ix);
+      //             const v = value
+      //               .substring(ix + 1)
+      //               .replace(/"(.*)"$/, '$1')
+      //               .replace(/'(.*)'$/, '$1');
+      //             return {
+      //               ...acc,
+      //               [k]: v,
+      //             };
+      //           } catch (e) {
+      //             if (e instanceof Error) {
+      //               throw new Error(`Error parsing ${value}: ${e.message}`);
+      //             }
+      //           }
+      //         }, {} as AddAttributes);
+      //       },
+      //     },
+      //   },
+      // })
+      // .command({
+      //   command: 'set [name] [subcommand]',
+      //   describe: '(Administrative) Set a provider setting (e.g. provisioning)',
+      //   handler: ({ name, subcommand, type, endpoint, token }) =>
+      //     this.loginWrapper('repo', () =>
+      //       this.set.handle(
+      //         subcommand as SetSubcommands,
+      //         name as string,
+      //         {
+      //           type: type as ProvisioningTypes | undefined,
+      //           endpoint: endpoint as string | undefined,
+      //           token: token as string | undefined,
+      //         } as SetHandleOpts,
+      //       ),
+      //     ),
+      //   builder: {
+      //     name: {
+      //       demand: true,
+      //       type: 'string',
+      //     },
+      //     subcommand: {
+      //       demand: true,
+      //       type: 'string',
+      //       choices: ['provisioning'] as SetSubcommands[],
+      //     },
+      //     type: {
+      //       demand: false,
+      //       type: 'string',
+      //       choices: ['scim'] as ProvisioningTypes[],
+      //     },
+      //     endpoint: {
+      //       demand: false,
+      //       type: 'string',
+      //     },
+      //     token: {
+      //       demand: false,
+      //       type: 'string',
+      //     },
+      //   },
+      // })
+      // .command({
+      //   command: 'show [subcommand]',
+      //   describe: `(Administrative) Show various configurations (metadata, certificate, entityId, config, etc.)`,
+      //   handler: ({ org, provider, subcommand, save, refresh, raw }) =>
+      //     this.loginWrapper('user:email', async () =>
+      //       this.show.handle(
+      //         subcommand as ShowSubcommands,
+      //         org as string | undefined,
+      //         provider as string | undefined,
+      //         save as boolean | undefined,
+      //         refresh as boolean | undefined,
+      //         raw as boolean | undefined,
+      //       ),
+      //     ),
+      //   builder: {
+      //     subcommand: {
+      //       demand: true,
+      //       type: 'string',
+      //       choices: [
+      //         'metadata',
+      //         'certificate',
+      //         'entityId',
+      //         'loginUrl',
+      //         'logoutUrl',
+      //         'config',
+      //         'roles',
+      //         'logins',
+      //         'orgs',
+      //       ] as ShowSubcommands[],
+      //     },
+      //     org: {
+      //       demand: false,
+      //       type: 'string',
+      //       description: 'Specify an organization',
+      //     },
+      //     provider: {
+      //       demand: false,
+      //       type: 'string',
+      //       description: 'Specify a provider',
+      //     },
+      //     save: {
+      //       demand: false,
+      //       type: 'boolean',
+      //       description: 'Output to a file',
+      //     },
+      //     refresh: {
+      //       demand: false,
+      //       type: 'boolean',
+      //       default: false,
+      //       description: 'Refresh backend config',
+      //     },
+      //     raw: {
+      //       demand: false,
+      //       type: 'boolean',
+      //       default: false,
+      //       description: 'For `config` subcommand, show raw configuration',
+      //     },
+      //   },
+      // })
       .help()
       .wrap(null)
       .version(version)
