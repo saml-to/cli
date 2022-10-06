@@ -92,3 +92,35 @@ jobs:
       - name: Test Assumed Role using Saved Profile
         run: aws sts get-caller-identity --profile ${{ matrix.role }}
         shell: bash
+
+  assume-success-with-variables:
+    strategy:
+      matrix:
+        node: [16]
+        os: ['ubuntu-latest'] # TODO add windows-latest
+        role:
+          - slyo-org-01-readonly
+        flags:
+          # - '--dev --provider aws-with-variables'
+          - '--provider aws-with-variables'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+      - run: yarn
+      - name: Login
+        id: login
+        run: yarn start login github --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} ${{ matrix.flags }}
+        shell: bash
+      - name: Assume (User Email PAT)
+        id: assume_user_email_pat
+        run: yarn start assume ${{ matrix.role }} --headless ${{ matrix.flags }} || echo "::set-output name=returnCode::$?"
+        shell: bash
+      - name: Assume (User Email PAT) Assertion (Success == Skipped)
+        if: ${{ steps.assume_user_email_pat.outputs.returnCode != '0' }}
+        run: |
+          echo "The return code was ${{ steps.assume_user_email_pat.outputs.returnCode }}"
+          exit 1
