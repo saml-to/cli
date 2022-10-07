@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         node: [14, 16, 18]
-        os: ['macos-latest', 'ubuntu-latest', 'windows-latest']
+        os: ['macos-latest', 'ubuntu-latest'] # todo add 'windows-latest'
         role:
           - readonly
           - arn:aws:iam::656716386475:role/readonly
@@ -88,7 +88,7 @@ jobs:
     strategy:
       matrix:
         node: [16]
-        os: ['macos-latest', 'ubuntu-latest', 'windows-latest']
+        os: ['macos-latest', 'ubuntu-latest'] # todo add 'windows-latest'
         assumeCommand:
           - 'slyo-org-01-readonly-nonlive --dev'
           - 'slyo-org-01-readonly-live'
