@@ -115,7 +115,7 @@ jobs:
         run: yarn start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} || echo "::set-output name=returnCode::$?"
         shell: bash
       - name: Assume (User Email PAT) Assertion (Success == Skipped)
-        if: ${{ steps.assume_user_email_pat.outputs.returnCode != '0' }}
+        if: ${{ steps.assume_user_email_pat.outputs.returnCode != '255' }}
         run: |
           echo "The return code was ${{ steps.assume_user_email_pat.outputs.returnCode }}"
           exit 1
