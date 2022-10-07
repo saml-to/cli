@@ -100,7 +100,7 @@ jobs:
         os: ['ubuntu-latest']
         assumeCommand:
           # --dev + live (or non-dev + nonlive) causes an issuer URL mismatch
-          - 'slyo-org-01-readonly-nonlive'
+          # - 'slyo-org-01-readonly-nonlive'
           - 'slyo-org-01-readonly-live --dev'
     runs-on: ${{ matrix.os }}
     steps:
@@ -127,7 +127,7 @@ jobs:
         os: ['ubuntu-latest']
         assumeCommand:
           - 'slyo-org-01-readonly-nonlive --dev'
-          - 'slyo-org-01-readonly-live'
+          # - 'slyo-org-01-readonly-live'
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
