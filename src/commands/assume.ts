@@ -38,6 +38,7 @@ export class AssumeCommand {
     org?: string,
     provider?: string,
     save?: string,
+    withToken?: string,
   ): Promise<void> {
     event(this.scms, 'assume', undefined, org);
 
@@ -62,7 +63,7 @@ export class AssumeCommand {
 
     try {
       if (headless || save) {
-        const token = this.scms.getGithubToken();
+        const token = withToken || this.scms.getGithubToken();
         if (!token) {
           throw new Error(NO_GITHUB_CLIENT);
         }
@@ -70,10 +71,12 @@ export class AssumeCommand {
         const { data: response } = await idpApi.assumeRole(role, org, provider);
         return await this.assumeTerminal(response, save, headless);
       } else {
-        this.scms.getGithubToken();
+        if (!withToken) {
+          this.scms.getGithubToken();
+        }
         const idpApi = this.apiHelper.idpApi();
         const { data: response } = await idpApi.assumeRoleForBrowser(role, org, provider);
-        return await this.assumeBrowser(response);
+        return await this.assumeBrowser(response, withToken);
       }
     } catch (e) {
       if (axios.isAxiosError(e) && e.response) {
@@ -96,11 +99,14 @@ export class AssumeCommand {
     }
   }
 
-  private async assumeBrowser(response: GithubSlsRestApiAssumeBrowserResponse): Promise<void> {
+  private async assumeBrowser(
+    response: GithubSlsRestApiAssumeBrowserResponse,
+    withToken?: string,
+  ): Promise<void> {
     if (response.browserUri) {
       const url = new URL(response.browserUri);
       try {
-        const token = this.scms.getGithubToken();
+        const token = withToken || this.scms.getGithubToken();
         if (token) {
           url.searchParams.set('token', token);
         }

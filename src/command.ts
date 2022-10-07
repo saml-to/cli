@@ -35,7 +35,7 @@ process.addListener('SIGINT', () => {
   process.exit(0);
 });
 
-export const prompt = <T>(
+export const prompt = <T extends inquirer.Answers>(
   field: string,
   questions: QuestionCollection<T>,
   initialAnswers?: Partial<T>,
@@ -175,7 +175,7 @@ export class Command {
       .command({
         command: 'assume [role]',
         describe: 'Assume a role',
-        handler: ({ role, org, provider, headless, save }) =>
+        handler: ({ role, org, provider, headless, save, withToken }) =>
           this.loginWrapper(
             'user:email',
             () =>
@@ -185,6 +185,7 @@ export class Command {
                 org as string | undefined,
                 provider as string | undefined,
                 save as string | undefined,
+                withToken as string | undefined,
               ),
             headless as boolean,
           ),
@@ -215,6 +216,11 @@ export class Command {
             demand: false,
             type: 'string',
             description: 'Specify the provider',
+          },
+          withToken: {
+            demand: false,
+            type: 'string',
+            description: 'Use the provided token (defaults to using the token in ~/.saml-to/)',
           },
         },
       })
