@@ -113,7 +113,7 @@ export class Command {
       .command({
         command: 'list-roles',
         describe: `Show roles that are available to assume`,
-        handler: ({ org, provider, refresh }) =>
+        handler: ({ org, provider, refresh, withToken }) =>
           this.loginWrapper('user:email', () =>
             this.show.handle(
               'roles' as ShowSubcommands,
@@ -122,6 +122,7 @@ export class Command {
               false,
               refresh as boolean | undefined,
               false,
+              withToken as string | undefined,
             ),
           ),
         builder: {
@@ -140,6 +141,11 @@ export class Command {
             type: 'boolean',
             default: false,
             description: 'Refresh cached logins from source control',
+          },
+          withToken: {
+            demand: false,
+            type: 'string',
+            description: 'Use the provided token (defaults to using the token in ~/.saml-to/)',
           },
         },
       })

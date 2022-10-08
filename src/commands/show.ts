@@ -45,6 +45,7 @@ export class ShowCommand {
     save?: boolean,
     refresh?: boolean,
     raw?: boolean,
+    withToken?: string,
   ): Promise<void> {
     switch (subcommand) {
       case 'orgs': {
@@ -53,7 +54,7 @@ export class ShowCommand {
       }
       case 'roles': {
         event(this.scms, 'show', subcommand, org);
-        return this.showRoles(org, provider, refresh, save);
+        return this.showRoles(org, provider, refresh, save, withToken);
       }
       case 'logins': {
         event(this.scms, 'show', subcommand, org);
@@ -196,8 +197,9 @@ export class ShowCommand {
     org?: string,
     provider?: string,
     refresh?: boolean,
+    withToken?: string,
   ): Promise<GithubSlsRestApiRoleResponse[]> {
-    const accessToken = this.scms.getGithubToken();
+    const accessToken = withToken || this.scms.getGithubToken();
     const idpApi = this.apiHelper.idpApi(accessToken);
     const { data: roles } = await idpApi.listRoles(org, provider, refresh);
     return roles.results;
@@ -208,8 +210,9 @@ export class ShowCommand {
     provider?: string,
     refresh?: boolean,
     save?: boolean,
+    withToken?: string,
   ): Promise<void> {
-    const roles = await this.fetchRoles(org, provider, refresh);
+    const roles = await this.fetchRoles(org, provider, refresh, withToken);
 
     if (!save) {
       ui.updateBottomBar('');
