@@ -169,7 +169,7 @@ ${githubLogins.map((l) => `- ${l}`)}`,
       throw new Error('Missing sdk options from saml response');
     }
 
-    if (save) {
+    if (save && !headless) {
       ui.updateBottomBar(`Updating AWS '${save}' Profile...`);
     }
 
@@ -200,10 +200,12 @@ ${githubLogins.map((l) => `- ${l}`)}`,
       await exec([...base, 'aws_session_token', response.Credentials.SessionToken]);
 
       if (headless) {
-        this.genericHelper.outputEnv({
-          AWS_PROFILE: save,
-        });
-        return;
+        try {
+          this.genericHelper.outputEnv({
+            AWS_PROFILE: save,
+          });
+          return;
+        } catch (e) {}
       } else {
         ui.updateBottomBar('');
         console.log(
