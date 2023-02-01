@@ -157,10 +157,10 @@ jobs:
     strategy:
       matrix:
         node: [16]
-        os: ['macos-latest', 'ubuntu-latest'] # todo add 'windows-latest'
+        os: ['ubuntu-latest']
         assumeCommand:
           - 'arn:aws:iam::656716386475:role/readonly --provider aws-nonlive --dev'
-          # - 'arn:aws:iam::656716386475:role/readonly --provider aws-live'
+          - 'arn:aws:iam::656716386475:role/readonly --provider aws-live'
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -181,7 +181,7 @@ jobs:
         os: ['ubuntu-latest']
         assumeCommand:
           - 'arn:aws:iam::656716386475:role/readonly --provider aws-nonlive --dev'
-          # - 'slyo-org-01-readonly-live --dev'
+          - 'arn:aws:iam::656716386475:role/readonly --provider aws-live'
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
