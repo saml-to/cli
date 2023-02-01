@@ -152,3 +152,50 @@ jobs:
         run: |
           echo "The return code was ${{ steps.assume_user_email_pat.outputs.returnCode }}"
           exit 1
+
+  assume-success-teams:
+    strategy:
+      matrix:
+        node: [16]
+        os: ['macos-latest', 'ubuntu-latest'] # todo add 'windows-latest'
+        assumeCommand:
+          - 'arn:aws:iam::656716386475:role/readonly --provider aws-nonlive --dev'
+          # - 'arn:aws:iam::656716386475:role/readonly --provider aws-live'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+      - run: yarn
+      - name: Assume as slyu-orgmember-01 via GitHub Teams
+        run: yarn start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_01_USER_EMAIL_GH_TOKEN }}
+      - name: Assume as slyu-orgmember-02 via User Definition
+        run: yarn start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_02_USER_EMAIL_GH_TOKEN }}
+
+  assume-fail-teams:
+    strategy:
+      matrix:
+        node: [16]
+        os: ['ubuntu-latest']
+        assumeCommand:
+          - 'arn:aws:iam::656716386475:role/readonly --provider aws-nonlive --dev'
+          # - 'slyo-org-01-readonly-live --dev'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+      - run: yarn
+      - name: Assume as slyu-orgmember-03
+        id: assume_slyu_orgmember_03
+        run: yarn start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_03_USER_EMAIL_GH_TOKEN }} || echo "::set-output name=returnCode::$?"
+        shell: bash
+      - name: Assume (User Email PAT) Assertion (Success == Skipped)
+        if: ${{ steps.assume_slyu_orgmember_03.outputs.returnCode != '255' }}
+        run: |
+          echo "The return code was ${{ steps.assume_slyu_orgmember_03.outputs.returnCode }}"
+          exit 1
