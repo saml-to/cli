@@ -37,6 +37,7 @@ export const event = (scms: Scms, action: string, subAction?: string, org?: stri
         anonymousId,
         event: action,
         properties: {
+          anonymousId,
           anonymousOrg,
           subAction: subAction,
         },

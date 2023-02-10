@@ -16,7 +16,12 @@ IN DEVELOPMENT MODE
   }
 
   idpApi(accessToken?: string): IDPApi {
-    const configuration = new IDPConfiguration({ accessToken });
+    const configuration = new IDPConfiguration({
+      accessToken,
+      baseOptions: {
+        headers: { 'User-Agent': 'cli' },
+      },
+    });
     if (this.dev) {
       configuration.basePath = 'https://sso-nonlive.saml.to/github';
       const apiKeyIx = this.argv.findIndex((i) => i === '--apiKey');
