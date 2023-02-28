@@ -18,6 +18,7 @@ import { MessagesHelper } from '../helpers/messagesHelper';
 import { event } from '../helpers/events';
 import { openBrowser } from '../helpers/browserHelper';
 import { ApiHelper } from '../helpers/apiHelper';
+import { RetryFunctionWithCode, TotpHelper } from '../helpers/totpHelper';
 
 export class AssumeCommand {
   scms: Scms;
@@ -26,10 +27,13 @@ export class AssumeCommand {
 
   awsHelper: AwsHelper;
 
+  totpHelper: TotpHelper;
+
   constructor(private apiHelper: ApiHelper, private messagesHelper: MessagesHelper) {
     this.scms = new Scms();
     this.show = new ShowCommand(apiHelper);
     this.awsHelper = new AwsHelper(apiHelper, messagesHelper);
+    this.totpHelper = new TotpHelper(apiHelper);
   }
 
   async handle(
@@ -39,6 +43,7 @@ export class AssumeCommand {
     provider?: string,
     save?: string,
     withToken?: string,
+    withCode?: string,
   ): Promise<void> {
     event(this.scms, 'assume', undefined, org);
 
@@ -67,9 +72,15 @@ export class AssumeCommand {
         if (!token) {
           throw new Error(NO_GITHUB_CLIENT);
         }
-        const idpApi = this.apiHelper.idpApi(token);
+        const idpApi = this.apiHelper.idpApi(token, withCode);
         const { data: response } = await idpApi.assumeRole(role, org, provider);
-        return await this.assumeTerminal(response, save, headless);
+        return await this.assumeTerminal(
+          response,
+          token,
+          (code?: string) => this.handle(role, headless, org, provider, save, withToken, code),
+          save,
+          headless,
+        );
       } else {
         if (!withToken) {
           this.scms.getGithubToken();
@@ -121,9 +132,16 @@ export class AssumeCommand {
 
   private async assumeTerminal(
     samlResponse: GithubSlsRestApiSamlResponseContainer,
+    token: string,
+    retryFn: RetryFunctionWithCode,
     save?: string,
     headless?: boolean,
   ): Promise<void> {
+    const { challenge } = samlResponse;
+    if (challenge) {
+      return this.totpHelper.promptChallenge(samlResponse.org, challenge, token, retryFn);
+    }
+
     if (samlResponse.recipient.endsWith('.amazon.com/saml')) {
       return this.awsHelper.assumeAws(samlResponse, save, headless);
     }
