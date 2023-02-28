@@ -205,19 +205,19 @@ ${githubLogins.map((l) => `- ${l}`)}`,
             AWS_PROFILE: save,
           });
           return;
-        } catch (e) {}
+        } catch (e) {
+          // pass
+        }
       } else {
         ui.updateBottomBar('');
         console.log(
           `
-⚠️ Credentials will expire ${moment(response.Credentials.Expiration).fromNow()}!`,
-        );
-        console.log(`
-You can now run \`aws\` commands such as:
+✅ A profile named \`${save}\` was updated in the AWS Configuration (~/.aws).
 
-aws sts get-caller-identity --profile ${save}
-aws ec2 describe-instances --profile ${save}
-`);
+ℹ️  Credentials will expire ${moment(
+            response.Credentials.Expiration,
+          ).fromNow()}! Re-run this command to get fresh credentials.`,
+        );
       }
 
       return;

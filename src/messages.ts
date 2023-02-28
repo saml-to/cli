@@ -33,3 +33,7 @@ export const GITHUB_SCOPE_NEEDED = (scope: string): string =>
   `To continue, scope '${scope}' is needed`;
 export const REPO_DOES_NOT_EXIST = (org: string, repo: string): string =>
   `${org}/${repo} does not exist. Please create it or specify a different repository.`;
+export const MISSING_CHALLENGE_METHODS = (org: string): string =>
+  `Unable to enroll in 2-Factor Authentication. ${org} requires Two Factor auth, however the allowed challenge methods are missing.`;
+export const MISSING_CHALLENGE_URI = (org: string): string =>
+  `Unable to enroll in 2-Factor Authentication. ${org} requires Two Factor auth, however challenge URI is missing.`;
