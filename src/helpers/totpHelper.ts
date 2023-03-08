@@ -36,17 +36,22 @@ export class TotpHelper {
 
     if (invitation && !last) {
       ui.updateBottomBar('');
-      const { methodIx } = await prompt('method', {
-        type: 'list',
-        name: 'methodIx',
-        message: `By which method would you like to provide 2-factor codes?`,
-        choices: methods.map((m, ix) => {
-          return {
-            name: `${m === GithubSlsRestApiTotpMethod.App ? 'Authenticator App' : 'Email'}`,
-            value: ix,
-          };
-        }),
-      });
+      const { methodIx } = await prompt(
+        'method',
+        {
+          type: 'list',
+          name: 'methodIx',
+          message: `By which method would you like to provide 2-factor codes?`,
+          choices: methods.map((m, ix) => {
+            return {
+              name: `${m === GithubSlsRestApiTotpMethod.App ? 'Authenticator App' : 'Email'}`,
+              value: ix,
+            };
+          }),
+        },
+        undefined,
+        process.stderr,
+      );
 
       method = methods[methodIx];
       const totpApi = this.apiHelper.totpApi(token);
@@ -66,9 +71,9 @@ export class TotpHelper {
 
       ui.updateBottomBar('');
       if (enrollResponse.method === GithubSlsRestApiTotpMethod.App) {
-        console.log('Scan this QR Code using an Authenticator App:');
+        process.stderr.write('Scan this QR Code using an Authenticator App:\n');
         const totpQr = await generateTotpQr(uri);
-        console.log(`
+        process.stderr.write(`
 ${totpQr.qr}
 Account Name: ${recipient}
 Setup Key: ${totpQr.secret}
@@ -87,11 +92,16 @@ Setup Key: ${totpQr.secret}
 
     ui.updateBottomBar('');
     const code = (
-      await prompt('code', {
-        type: 'password',
-        name: 'code',
-        message,
-      })
+      await prompt(
+        'code',
+        {
+          type: 'password',
+          name: 'code',
+          message,
+        },
+        undefined,
+        process.stderr,
+      )
     ).code as string;
 
     ui.updateBottomBar('Verifying code...');

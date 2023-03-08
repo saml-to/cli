@@ -36,11 +36,12 @@ export const prompt = <T extends inquirer.Answers>(
   field: string,
   questions: QuestionCollection<T>,
   initialAnswers?: Partial<T>,
+  stream?: NodeJS.WriteStream,
 ): Promise<T> & { ui: PromptUI } => {
   if (!process.stdin.isTTY) {
     throw new Error(`TTY was disabled while attempting to collect \`${field}\`.`);
   }
-  return inquirer.createPromptModule({ output: outputStream })(questions, initialAnswers);
+  return inquirer.createPromptModule({ output: stream || outputStream })(questions, initialAnswers);
 };
 
 export class Command {
