@@ -77,17 +77,19 @@ export class AssumeCommand {
         return await this.assumeTerminal(
           response,
           token,
-          (code?: string) => this.handle(role, headless, org, provider, save, withToken, code),
+          (code?: string) => this.handle(role, headless, org, provider, save, token, code),
           save,
           headless,
         );
       } else {
-        if (!withToken) {
-          this.scms.getGithubToken();
-        }
-        const idpApi = this.apiHelper.idpApi();
-        const { data: response } = await idpApi.assumeRoleForBrowser(role, org, provider);
-        return await this.assumeBrowser(response, withToken);
+        const token = withToken || this.scms.getGithubToken(true);
+        const idpApi = this.apiHelper.idpApi(token, withCode);
+        const { data: response } = await idpApi.assumeRoleForBrowser(role, org, provider, token);
+        return await this.assumeBrowser(
+          response,
+          (code?: string) => this.handle(role, headless, org, provider, save, token, code),
+          token,
+        );
       }
     } catch (e) {
       if (axios.isAxiosError(e) && e.response) {
@@ -112,12 +114,16 @@ export class AssumeCommand {
 
   private async assumeBrowser(
     response: GithubSlsRestApiAssumeBrowserResponse,
-    withToken?: string,
+    retryFn: RetryFunctionWithCode,
+    token?: string,
   ): Promise<void> {
+    const { challenge } = response;
+    if (challenge && token) {
+      return this.totpHelper.promptChallenge(challenge, token, retryFn);
+    }
     if (response.browserUri) {
       const url = new URL(response.browserUri);
       try {
-        const token = withToken || this.scms.getGithubToken();
         if (token) {
           url.searchParams.set('token', token);
         }
@@ -139,7 +145,7 @@ export class AssumeCommand {
   ): Promise<void> {
     const { challenge } = samlResponse;
     if (challenge) {
-      return this.totpHelper.promptChallenge(samlResponse.org, challenge, token, retryFn);
+      return this.totpHelper.promptChallenge(challenge, token, retryFn);
     }
 
     if (samlResponse.recipient.endsWith('.amazon.com/saml')) {

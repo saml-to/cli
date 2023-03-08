@@ -63,12 +63,17 @@ export class Scms {
     return this.githubFile;
   }
 
-  public getGithubToken(): string | undefined {
+  public getGithubToken(passive = false): string | undefined {
     // if (env.GITHUB_TOKEN) {
     //   return env.GITHUB_TOKEN;
     // }
 
-    if (!fs.existsSync(this.githubFile)) {
+    const githubFileExists = fs.existsSync(this.githubFile);
+    if (passive && !githubFileExists) {
+      return;
+    }
+
+    if (!githubFileExists) {
       throw new NoTokenError();
     }
 

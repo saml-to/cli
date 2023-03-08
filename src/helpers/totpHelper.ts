@@ -13,7 +13,6 @@ export class TotpHelper {
   constructor(private apiHelper: ApiHelper) {}
 
   async promptChallenge(
-    org: string,
     challenge: GithubSlsRestApiChallenge,
     token: string,
     retryFn: RetryFunctionWithCode,
@@ -22,7 +21,7 @@ export class TotpHelper {
       recipient?: string;
     },
   ): Promise<void> {
-    const { invitation, methods } = challenge;
+    const { org, invitation, methods } = challenge;
     let { recipient } = challenge;
 
     if (last) {
@@ -83,7 +82,7 @@ Setup Key: ${totpQr.secret}
     if (method === GithubSlsRestApiTotpMethod.App) {
       message = `Please enter the code in your Authenticator App for ${recipient}:`;
     } else {
-      message = `Please enter the one time code sent to ${recipient} via ${method}:`;
+      message = `Please enter the code sent to ${recipient} via ${method}:`;
     }
 
     ui.updateBottomBar('');
@@ -102,7 +101,7 @@ Setup Key: ${totpQr.secret}
         .totpEnroll(org, method, { invitation });
       if (!response.verified) {
         ui.updateBottomBar('The code is incorrect. Please try again.');
-        return this.promptChallenge(org, challenge, token, retryFn, {
+        return this.promptChallenge(challenge, token, retryFn, {
           recipient: response.recipient || recipient,
           method,
         });
