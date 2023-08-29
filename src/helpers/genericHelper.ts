@@ -432,12 +432,9 @@ ${githubLogins.map((l) => `- ${l}`)}`,
     switch (platform) {
       case 'win32': {
         Object.entries(vars).forEach(([key, value], i, arr) => {
-          process.stdout.write('set ');
-          process.stdout.write(key);
-          process.stdout.write('=');
-          process.stdout.write(value);
+          process.stdout.write(`set ${key}=${value}`);
           if (i + 1 < arr.length) {
-            process.stdout.write(' & ');
+            process.stdout.write(' && ');
           }
         });
         break;
@@ -445,9 +442,7 @@ ${githubLogins.map((l) => `- ${l}`)}`,
       default: {
         process.stdout.write('export ');
         Object.entries(vars).forEach(([key, value], i, arr) => {
-          process.stdout.write(key);
-          process.stdout.write('=');
-          process.stdout.write(value);
+          process.stdout.write(`${key}=${value}`);
           if (i + 1 < arr.length) {
             process.stdout.write(' ');
           }
