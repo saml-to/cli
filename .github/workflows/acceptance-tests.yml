@@ -61,6 +61,7 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: 'yarn'
       - run: yarn
+        shell: pwsh
       - name: Login
         id: login
         run: yarn start login github --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} ${{ matrix.flags }}
