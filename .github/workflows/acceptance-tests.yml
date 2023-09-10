@@ -62,7 +62,7 @@ jobs:
           cache: 'yarn'
       - run: yarn
         shell: pwsh
-      - run: yarn global add .
+      - run: yarn global add "file:$PWD"
         shell: pwsh
       - name: Login
         id: login
