@@ -12,7 +12,7 @@
   "private": false,
   "scripts": {
     "build": "webpack",
-    "start": "node --trace-warnings --trace-exit --trace-sigint --trace-syncio --trace-tls --trace-uncaught -r ts-node/register -r tsconfig-paths/register cli/index.ts",
+    "start": "node --trace-warnings --trace-exit --trace-sigint --trace-uncaught -r ts-node/register -r tsconfig-paths/register cli/index.ts",
     "lint": "eslint 'src/**/*.{js,ts,tsx}' --quiet --fix && yarn run prettier --write 'src/**/*.{js,ts,tsx}'",
     "openapi": "openapi-generator -g axios -i .scaffoldly/$NODE_ENV -o api -r auth-sls-rest-api github-sls-rest-api"
   },
