@@ -6,11 +6,13 @@ import { Command } from '../src/command';
 import { Console } from 'console';
 
 // Disables (node:64080) ExperimentalWarning: The Fetch API is an experimental feature. This feature could change at any time
-process.emitWarning = () => {};
+// process.emitWarning = () => {};
 
 export const headless = !!process.argv.find((arg) => arg === '--headless');
 export const outputStream = headless ? process.stderr : process.stdout;
 export const customConsole = new Console(outputStream, process.stderr);
+
+const defaultError = console.error;
 
 console.log = customConsole.log;
 console.info = customConsole.info;
@@ -26,6 +28,7 @@ console.trace = customConsole.trace;
     await command.run(process.argv);
     process.exit(0);
   } catch (e) {
+    defaultError(e);
     if (e instanceof ErrorWithReturnCode) {
       process.exit(e.returnCode);
     }
