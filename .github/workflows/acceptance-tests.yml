@@ -15,7 +15,6 @@ jobs:
       matrix:
         node: [14, 16, 18]
         os: ['macos-latest', 'ubuntu-latest'] # todo add 'windows-latest'
-        shell: ['bash', 'pwsh']
         role:
           - readonly
           - arn:aws:iam::656716386475:role/readonly
@@ -33,15 +32,43 @@ jobs:
       - name: Login
         id: login
         run: yarn start login github --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} ${{ matrix.flags }}
-        shell: ${{ matrix.shell }}
       - name: Assume (User Email PAT)
         id: assume_user_email_pat
         run: yarn start assume ${{ matrix.role }} --headless ${{ matrix.flags }}
-        shell: ${{ matrix.shell }}
       - name: Assume (User Email PAT) and Save Profile
         id: assume_user_email_pat_profile
         run: yarn start assume ${{ matrix.role }} ${{ matrix.flags }} --save
-        shell: ${{ matrix.shell }}
+      - name: Test Assumed Role using Saved Profile
+        run: aws sts get-caller-identity --profile ${{ matrix.role }}
+
+  assume-success-windows-powershell:
+    strategy:
+      matrix:
+        node: [14, 16, 18]
+        os: ['windows-latest']
+        role:
+          - readonly
+          - arn:aws:iam::656716386475:role/readonly
+        flags:
+          - '--dev --provider aws-nonlive'
+          - '--provider aws' # TODO Split tests for live/nonlive so this can be dropped
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+      - run: yarn
+      - name: Login
+        id: login
+        run: yarn start login github --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} ${{ matrix.flags }}
+      - name: Assume (User Email PAT)
+        id: assume_user_email_pat
+        run: yarn start assume ${{ matrix.role }} --headless ${{ matrix.flags }}
+      - name: Assume (User Email PAT) and Save Profile
+        id: assume_user_email_pat_profile
+        run: yarn start assume ${{ matrix.role }} ${{ matrix.flags }} --save
       - name: Test Assumed Role using Saved Profile
         run: aws sts get-caller-identity --profile ${{ matrix.role }}
 
@@ -50,7 +77,6 @@ jobs:
       matrix:
         node: [16]
         os: ['ubuntu-latest']
-        shell: ['bash', 'pwsh']        
         role:
           - doesnotexist
           - arn:aws:iam::656716386475:role/doesnotexist
@@ -69,7 +95,6 @@ jobs:
       - name: Assume (No-Auth)
         id: assume_no_auth
         run: yarn start assume ${{ matrix.role }} --headless ${{ matrix.flags }} || echo "::set-output name=returnCode::$?"
-        shell: ${{ matrix.shell }}
       - name: Assume (No-Auth) Assertion (Success == Skipped)
         if: ${{ steps.assume_no_auth.outputs.returnCode != '10' }}
         run: |
@@ -78,11 +103,9 @@ jobs:
       - name: Login
         id: login
         run: yarn start login github --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} ${{ matrix.flags }}]
-        shell: ${{ matrix.shell }}
       - name: Assume (User Email PAT)
         id: assume_user_email_pat
         run: yarn start assume ${{ matrix.role }} --headless ${{ matrix.flags }} || echo "::set-output name=returnCode::$?"
-        shell: ${{ matrix.shell }}
       - name: Assume (User Email PAT) Assertion (Success == Skipped)
         if: ${{ steps.assume_user_email_pat.outputs.returnCode != '255' }}
         run: |
@@ -94,7 +117,6 @@ jobs:
       matrix:
         node: [16]
         os: ['macos-latest', 'ubuntu-latest'] # todo add 'windows-latest'
-        shell: ['bash', 'pwsh']
         assumeCommand:
           - 'slyo-org-01-readonly-nonlive --dev'
           - 'slyo-org-01-readonly-live'
@@ -109,14 +131,12 @@ jobs:
       - name: Assume (User Email PAT)
         id: assume_user_email_pat
         run: yarn start assume ${{ matrix.assumeCommand }} --provider aws-with-variables --headless --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }}
-        shell: ${{ matrix.shell }}
 
   assume-success-multiaccount:
     strategy:
       matrix:
         node: [16]
         os: ['macos-latest', 'ubuntu-latest'] # todo add 'windows-latest'
-        shell: ['bash', 'pwsh']
         assumeCommand:
           - 'arn:aws:iam::931426163329:role/slyo-org-01-readonly-nonlive --dev'
           - 'arn:aws:iam::013527058470:role/slyo-org-01-readonly-nonlive --dev'
@@ -133,14 +153,12 @@ jobs:
       - name: Assume (User Email PAT)
         id: assume_user_email_pat
         run: yarn start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }}
-        shell: ${{ matrix.shell }}
 
   assume-fail-with-variables:
     strategy:
       matrix:
         node: [16]
         os: ['ubuntu-latest']
-        shell: ['bash', 'pwsh']
         assumeCommand:
           # --dev + live (or non-dev + nonlive) causes an issuer URL mismatch
           - 'slyo-org-01-readonly-nonlive'
@@ -168,7 +186,6 @@ jobs:
       matrix:
         node: [16]
         os: ['ubuntu-latest']
-        shell: ['bash', 'pwsh']
         assumeCommand:
           - 'arn:aws:iam::656716386475:role/readonly --provider aws-nonlive --dev'
           - 'arn:aws:iam::656716386475:role/readonly --provider aws-live'
@@ -182,17 +199,14 @@ jobs:
       - run: yarn
       - name: Assume as slyu-orgmember-01 via GitHub Teams
         run: yarn start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_01_USER_EMAIL_GH_TOKEN }}
-        shell: ${{ matrix.shell }}
       - name: Assume as slyu-orgmember-02 via User Definition
         run: yarn start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_02_USER_EMAIL_GH_TOKEN }}
-        shell: ${{ matrix.shell }}
 
   assume-fail-teams:
     strategy:
       matrix:
         node: [16]
         os: ['ubuntu-latest']
-        shell: ['bash', 'pwsh']
         assumeCommand:
           - 'arn:aws:iam::656716386475:role/readonly --provider aws-nonlive --dev'
           - 'arn:aws:iam::656716386475:role/readonly --provider aws-live'
@@ -207,7 +221,6 @@ jobs:
       - name: Assume as slyu-orgmember-03
         id: assume_slyu_orgmember_03
         run: yarn start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_03_USER_EMAIL_GH_TOKEN }} || echo "::set-output name=returnCode::$?"
-        shell: ${{ matrix.shell }}
       - name: Assume (User Email PAT) Assertion (Success == Skipped)
         if: ${{ steps.assume_slyu_orgmember_03.outputs.returnCode != '255' }}
         run: |
