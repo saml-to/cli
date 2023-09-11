@@ -3,7 +3,7 @@ import {
   GithubSlsRestApiLoginResponse,
 } from '../../api/github-sls-rest-api';
 import { ERROR_LOGGING_IN, MULTIPLE_LOGINS, NO_GITHUB_CLIENT } from '../messages';
-import { Scms } from '../stores/scms';
+import { NoTokenError, Scms } from '../stores/scms';
 import axios from 'axios';
 import { ShowCommand } from './show';
 import { AwsHelper } from '../helpers/aws/awsHelper';
@@ -119,6 +119,10 @@ export class LoginCommand {
             throw new Error(`New identity has been stored. Please run your desired command again.`);
           }
         }
+      }
+      if (e instanceof NoTokenError) {
+        await this.githubHelper.promptLogin('user:email', org);
+        await this.promptLogin(org);
       }
       if (e instanceof Error) {
         throw new Error(`Error fetching logins: ${e.message}`);
