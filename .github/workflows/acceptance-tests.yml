@@ -89,7 +89,7 @@ jobs:
       - run: yarn
       - name: Assume (No-Auth)
         id: assume_no_auth
-        run: yarn --silent start assume ${{ matrix.role }} --headless ${{ matrix.flags }} || echo "::set-output name=returnCode::$?"
+        run: yarn --silent start assume ${{ matrix.role }} --headless ${{ matrix.flags }} || echo "returnCode=$?" >> $GITHUB_OUTPUT
         shell: bash
       - name: Assume (No-Auth) Assertion (Success == Skipped)
         if: ${{ steps.assume_no_auth.outputs.returnCode != '10' }}
@@ -102,7 +102,7 @@ jobs:
         shell: bash
       - name: Assume (User Email PAT)
         id: assume_user_email_pat
-        run: yarn --silent start assume ${{ matrix.role }} --headless ${{ matrix.flags }} || echo "::set-output name=returnCode::$?"
+        run: yarn --silent start assume ${{ matrix.role }} --headless ${{ matrix.flags }} || echo "returnCode=$?" >> $GITHUB_OUTPUT
         shell: bash
       - name: Assume (User Email PAT) Assertion (Success == Skipped)
         if: ${{ steps.assume_user_email_pat.outputs.returnCode != '255' }}
@@ -218,7 +218,7 @@ jobs:
       - run: yarn
       - name: Assume as slyu-orgmember-03
         id: assume_slyu_orgmember_03
-        run: yarn --silent start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_03_USER_EMAIL_GH_TOKEN }} || echo "::set-output name=returnCode::$?"
+        run: yarn --silent start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_03_USER_EMAIL_GH_TOKEN }} || echo "returnCode=$?" >> $GITHUB_OUTPUT
         shell: bash
       - name: Assume (User Email PAT) Assertion (Success == Skipped)
         if: ${{ steps.assume_slyu_orgmember_03.outputs.returnCode != '255' }}
