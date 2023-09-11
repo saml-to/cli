@@ -215,6 +215,7 @@ export class Command {
             );
           }
         } else {
+          ui.updateBottomBar('');
           console.error(`Error: ${error ? error.message : msg}`);
         }
       });
