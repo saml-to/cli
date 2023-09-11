@@ -428,7 +428,6 @@ ${githubLogins.map((l) => `- ${l}`)}`,
   }
 
   outputEnv(vars: { [key: string]: string }, platform: NodeJS.Platform = process.platform): void {
-    ui.updateBottomBar('');
     switch (platform) {
       case 'win32': {
         throw new Error(`
