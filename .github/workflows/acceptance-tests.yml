@@ -35,9 +35,8 @@ jobs:
       - name: Assume (User Email PAT)
         id: assume_user_email_pat
         # TODO Figure out how to do subshells on windows
-        run: |
-          $(yarn --silent start assume ${{ matrix.role }} --headless ${{ matrix.flags }})
-          aws sts get-caller-identity --profile ${{ matrix.role }}
+        run: >
+          bash -c "$(yarn --silent start assume ${{ matrix.role }} --headless ${{ matrix.flags }}) && aws sts get-caller-identity --profile ${{ matrix.role }}"
 
   assume-success-save:
     strategy:
@@ -128,7 +127,7 @@ jobs:
       - run: yarn
       - name: Assume (User Email PAT)
         id: assume_user_email_pat
-        run: $(yarn --silent start assume ${{ matrix.assumeCommand }} --provider aws-with-variables --headless --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }})
+        run: yarn --silent start assume ${{ matrix.assumeCommand }} --provider aws-with-variables --headless --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }}
 
   assume-success-multiaccount:
     strategy:
