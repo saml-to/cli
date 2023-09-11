@@ -9,7 +9,7 @@ export class BottomBar {
 
   public updateBottomBar(text: string) {
     if (!this.headless) {
-      if (!process.stdin.isTTY || process.platform === 'win32') {
+      if (process.platform === 'win32') {
         // BottomBar on windows causes yarn start commands to emit a exit code of 1 for some reason
         // Write it an ugly way on this edge case
         process.stderr.write(`${text}\n`);
