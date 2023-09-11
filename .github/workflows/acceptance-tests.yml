@@ -34,7 +34,7 @@ jobs:
         run: yarn start login github --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} ${{ matrix.flags }}
       - name: Assume (User Email PAT)
         id: assume_user_email_pat
-        run: $(yarn start --silent assume ${{ matrix.role }} --headless ${{ matrix.flags }}) # TODO Figure out subshells on windows
+        run: $(yarn --silent start assume ${{ matrix.role }} --headless ${{ matrix.flags }}) # TODO Figure out subshells on windows
       - name: Test Assumed Role using Saved Profile
         run: aws sts get-caller-identity --profile ${{ matrix.role }}
 
@@ -62,7 +62,7 @@ jobs:
         run: yarn start login github --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} ${{ matrix.flags }}
       - name: Assume (User Email PAT) and Save Profile
         id: assume_user_email_pat_profile
-        run: yarn start --silent assume ${{ matrix.role }} ${{ matrix.flags }} --save
+        run: yarn --silent start assume ${{ matrix.role }} ${{ matrix.flags }} --save
       - name: Test Assumed Role using Saved Profile
         run: aws sts get-caller-identity --profile ${{ matrix.role }}
 
@@ -88,7 +88,7 @@ jobs:
       - run: yarn
       - name: Assume (No-Auth)
         id: assume_no_auth
-        run: yarn start --silent assume ${{ matrix.role }} --headless ${{ matrix.flags }} || echo "::set-output name=returnCode::$?"
+        run: yarn --silent start assume ${{ matrix.role }} --headless ${{ matrix.flags }} || echo "::set-output name=returnCode::$?"
         shell: bash
       - name: Assume (No-Auth) Assertion (Success == Skipped)
         if: ${{ steps.assume_no_auth.outputs.returnCode != '10' }}
@@ -101,7 +101,7 @@ jobs:
         shell: bash
       - name: Assume (User Email PAT)
         id: assume_user_email_pat
-        run: yarn start --silent assume ${{ matrix.role }} --headless ${{ matrix.flags }} || echo "::set-output name=returnCode::$?"
+        run: yarn --silent start assume ${{ matrix.role }} --headless ${{ matrix.flags }} || echo "::set-output name=returnCode::$?"
         shell: bash
       - name: Assume (User Email PAT) Assertion (Success == Skipped)
         if: ${{ steps.assume_user_email_pat.outputs.returnCode != '255' }}
@@ -127,7 +127,7 @@ jobs:
       - run: yarn
       - name: Assume (User Email PAT)
         id: assume_user_email_pat
-        run: $(yarn start --silent assume ${{ matrix.assumeCommand }} --provider aws-with-variables --headless --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }})
+        run: $(yarn --silent start assume ${{ matrix.assumeCommand }} --provider aws-with-variables --headless --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }})
 
   assume-success-multiaccount:
     strategy:
@@ -149,7 +149,7 @@ jobs:
       - run: yarn
       - name: Assume (User Email PAT)
         id: assume_user_email_pat
-        run: yarn start --silent assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }}
+        run: yarn --silent start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }}
 
   assume-fail-with-variables:
     strategy:
@@ -170,7 +170,7 @@ jobs:
       - run: yarn
       - name: Assume (User Email PAT)
         id: assume_user_email_pat
-        run: yarn start --silent assume ${{ matrix.assumeCommand }} --provider aws-with-variables --headless --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} || echo "::set-output name=returnCode::$?"
+        run: yarn --silent start assume ${{ matrix.assumeCommand }} --provider aws-with-variables --headless --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} || echo "::set-output name=returnCode::$?"
         shell: bash
       - name: Assume (User Email PAT) Assertion (Success == Skipped)
         if: ${{ steps.assume_user_email_pat.outputs.returnCode != '255' }}
@@ -195,9 +195,9 @@ jobs:
           cache: 'yarn'
       - run: yarn
       - name: Assume as slyu-orgmember-01 via GitHub Teams
-        run: yarn start --silent assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_01_USER_EMAIL_GH_TOKEN }}
+        run: yarn --silent start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_01_USER_EMAIL_GH_TOKEN }}
       - name: Assume as slyu-orgmember-02 via User Definition
-        run: yarn start --silent assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_02_USER_EMAIL_GH_TOKEN }}
+        run: yarn --silent start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_02_USER_EMAIL_GH_TOKEN }}
 
   assume-fail-teams:
     strategy:
@@ -217,7 +217,7 @@ jobs:
       - run: yarn
       - name: Assume as slyu-orgmember-03
         id: assume_slyu_orgmember_03
-        run: yarn start --silent assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_03_USER_EMAIL_GH_TOKEN }} || echo "::set-output name=returnCode::$?"
+        run: yarn --silent start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_03_USER_EMAIL_GH_TOKEN }} || echo "::set-output name=returnCode::$?"
         shell: bash
       - name: Assume (User Email PAT) Assertion (Success == Skipped)
         if: ${{ steps.assume_slyu_orgmember_03.outputs.returnCode != '255' }}
