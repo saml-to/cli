@@ -10,19 +10,17 @@ on:
       - main
 
 jobs:
-  assume-success:
+  assume-success-headless:
     strategy:
       matrix:
-        # node: [14, 16, 18]
-        node: [18]
-        # os: ['macos-latest', 'ubuntu-latest', 'windows-latest']
-        os: ['windows-latest']
+        node: [14, 16, 18]
+        os: ['macos-latest', 'ubuntu-latest'] # TODO support windows-latest
         role:
           - readonly
-          # - arn:aws:iam::656716386475:role/readonly
+          - arn:aws:iam::656716386475:role/readonly
         flags:
           - '--dev --provider aws-nonlive'
-          # - '--provider aws' # TODO Split tests for live/nonlive so this can be dropped
+          - '--provider aws' # TODO Split tests for live/nonlive so this can be dropped
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -36,168 +34,193 @@ jobs:
         run: yarn start login github --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} ${{ matrix.flags }}
       - name: Assume (User Email PAT)
         id: assume_user_email_pat
-        run: yarn start assume ${{ matrix.role }} --headless ${{ matrix.flags }}
+        run: $(yarn start assume ${{ matrix.role }} --headless ${{ matrix.flags }}) # TODO Figure out subshells on windows
+      - name: Test Assumed Role using Saved Profile
+        run: aws sts get-caller-identity --profile ${{ matrix.role }}
+
+  assume-success-save:
+    strategy:
+      matrix:
+        node: [14, 16, 18]
+        os: ['macos-latest', 'ubuntu-latest', 'windows-latest']
+        role:
+          - readonly
+          - arn:aws:iam::656716386475:role/readonly
+        flags:
+          - '--dev --provider aws-nonlive'
+          - '--provider aws' # TODO Split tests for live/nonlive so this can be dropped
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+      - run: yarn
+      - name: Login
+        id: login
+        run: yarn start login github --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} ${{ matrix.flags }}
       - name: Assume (User Email PAT) and Save Profile
         id: assume_user_email_pat_profile
         run: yarn start assume ${{ matrix.role }} ${{ matrix.flags }} --save
       - name: Test Assumed Role using Saved Profile
         run: aws sts get-caller-identity --profile ${{ matrix.role }}
 
-  # assume-fail:
-  #   strategy:
-  #     matrix:
-  #       node: [16]
-  #       os: ['ubuntu-latest']
-  #       role:
-  #         - doesnotexist
-  #         - arn:aws:iam::656716386475:role/doesnotexist
-  #         - arn:aws:iam::000000000000:role/doesnotexist
-  #       flags:
-  #         - '--dev --provider aws-nonlive'
-  #         - '--provider aws'
-  #   runs-on: ${{ matrix.os }}
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - uses: actions/setup-node@v3
-  #       with:
-  #         node-version: ${{ matrix.node }}
-  #         cache: 'yarn'
-  #     - run: yarn
-  #     - name: Assume (No-Auth)
-  #       id: assume_no_auth
-  #       run: yarn start assume ${{ matrix.role }} --headless ${{ matrix.flags }} || echo "::set-output name=returnCode::$?"
-  #       shell: bash
-  #     - name: Assume (No-Auth) Assertion (Success == Skipped)
-  #       if: ${{ steps.assume_no_auth.outputs.returnCode != '10' }}
-  #       run: |
-  #         echo "The return code was ${{ steps.assume_no_auth.outputs.returnCode }}"
-  #         exit 1
-  #     - name: Login
-  #       id: login
-  #       run: yarn start login github --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} ${{ matrix.flags }}]
-  #       shell: bash
-  #     - name: Assume (User Email PAT)
-  #       id: assume_user_email_pat
-  #       run: yarn start assume ${{ matrix.role }} --headless ${{ matrix.flags }} || echo "::set-output name=returnCode::$?"
-  #       shell: bash
-  #     - name: Assume (User Email PAT) Assertion (Success == Skipped)
-  #       if: ${{ steps.assume_user_email_pat.outputs.returnCode != '255' }}
-  #       run: |
-  #         echo "The return code was ${{ steps.assume_user_email_pat.outputs.returnCode }}"
-  #         exit 1
+  assume-fail:
+    strategy:
+      matrix:
+        node: [16]
+        os: ['ubuntu-latest']
+        role:
+          - doesnotexist
+          - arn:aws:iam::656716386475:role/doesnotexist
+          - arn:aws:iam::000000000000:role/doesnotexist
+        flags:
+          - '--dev --provider aws-nonlive'
+          - '--provider aws'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+      - run: yarn
+      - name: Assume (No-Auth)
+        id: assume_no_auth
+        run: yarn start assume ${{ matrix.role }} --headless ${{ matrix.flags }} || echo "::set-output name=returnCode::$?"
+        shell: bash
+      - name: Assume (No-Auth) Assertion (Success == Skipped)
+        if: ${{ steps.assume_no_auth.outputs.returnCode != '10' }}
+        run: |
+          echo "The return code was ${{ steps.assume_no_auth.outputs.returnCode }}"
+          exit 1
+      - name: Login
+        id: login
+        run: yarn start login github --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} ${{ matrix.flags }}]
+        shell: bash
+      - name: Assume (User Email PAT)
+        id: assume_user_email_pat
+        run: yarn start assume ${{ matrix.role }} --headless ${{ matrix.flags }} || echo "::set-output name=returnCode::$?"
+        shell: bash
+      - name: Assume (User Email PAT) Assertion (Success == Skipped)
+        if: ${{ steps.assume_user_email_pat.outputs.returnCode != '255' }}
+        run: |
+          echo "The return code was ${{ steps.assume_user_email_pat.outputs.returnCode }}"
+          exit 1
 
-  # assume-success-with-variables:
-  #   strategy:
-  #     matrix:
-  #       node: [16]
-  #       os: ['macos-latest', 'ubuntu-latest'] # todo add 'windows-latest'
-  #       assumeCommand:
-  #         - 'slyo-org-01-readonly-nonlive --dev'
-  #         - 'slyo-org-01-readonly-live'
-  #   runs-on: ${{ matrix.os }}
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - uses: actions/setup-node@v3
-  #       with:
-  #         node-version: ${{ matrix.node }}
-  #         cache: 'yarn'
-  #     - run: yarn
-  #     - name: Assume (User Email PAT)
-  #       id: assume_user_email_pat
-  #       run: yarn start assume ${{ matrix.assumeCommand }} --provider aws-with-variables --headless --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }}
+  assume-success-with-variables:
+    strategy:
+      matrix:
+        node: [16]
+        os: ['macos-latest', 'ubuntu-latest']
+        assumeCommand:
+          - 'slyo-org-01-readonly-nonlive --dev'
+          - 'slyo-org-01-readonly-live'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+      - run: yarn
+      - name: Assume (User Email PAT)
+        id: assume_user_email_pat
+        run: $(yarn start assume ${{ matrix.assumeCommand }} --provider aws-with-variables --headless --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }})
 
-  # assume-success-multiaccount:
-  #   strategy:
-  #     matrix:
-  #       node: [16]
-  #       os: ['macos-latest', 'ubuntu-latest'] # todo add 'windows-latest'
-  #       assumeCommand:
-  #         - 'arn:aws:iam::931426163329:role/slyo-org-01-readonly-nonlive --dev'
-  #         - 'arn:aws:iam::013527058470:role/slyo-org-01-readonly-nonlive --dev'
-  #         - 'arn:aws:iam::931426163329:role/slyo-org-01-readonly-live'
-  #         - 'arn:aws:iam::013527058470:role/slyo-org-01-readonly-live'
-  #   runs-on: ${{ matrix.os }}
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - uses: actions/setup-node@v3
-  #       with:
-  #         node-version: ${{ matrix.node }}
-  #         cache: 'yarn'
-  #     - run: yarn
-  #     - name: Assume (User Email PAT)
-  #       id: assume_user_email_pat
-  #       run: yarn start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }}
+  assume-success-multiaccount:
+    strategy:
+      matrix:
+        node: [16]
+        os: ['macos-latest', 'ubuntu-latest'] 
+        assumeCommand:
+          - 'arn:aws:iam::931426163329:role/slyo-org-01-readonly-nonlive --dev'
+          - 'arn:aws:iam::013527058470:role/slyo-org-01-readonly-nonlive --dev'
+          - 'arn:aws:iam::931426163329:role/slyo-org-01-readonly-live'
+          - 'arn:aws:iam::013527058470:role/slyo-org-01-readonly-live'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+      - run: yarn
+      - name: Assume (User Email PAT)
+        id: assume_user_email_pat
+        run: yarn start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }}
 
-  # assume-fail-with-variables:
-  #   strategy:
-  #     matrix:
-  #       node: [16]
-  #       os: ['ubuntu-latest']
-  #       assumeCommand:
-  #         # --dev + live (or non-dev + nonlive) causes an issuer URL mismatch
-  #         - 'slyo-org-01-readonly-nonlive'
-  #         - 'slyo-org-01-readonly-live --dev'
-  #   runs-on: ${{ matrix.os }}
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - uses: actions/setup-node@v3
-  #       with:
-  #         node-version: ${{ matrix.node }}
-  #         cache: 'yarn'
-  #     - run: yarn
-  #     - name: Assume (User Email PAT)
-  #       id: assume_user_email_pat
-  #       run: yarn start assume ${{ matrix.assumeCommand }} --provider aws-with-variables --headless --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} || echo "::set-output name=returnCode::$?"
-  #       shell: bash
-  #     - name: Assume (User Email PAT) Assertion (Success == Skipped)
-  #       if: ${{ steps.assume_user_email_pat.outputs.returnCode != '255' }}
-  #       run: |
-  #         echo "The return code was ${{ steps.assume_user_email_pat.outputs.returnCode }}"
-  #         exit 1
+  assume-fail-with-variables:
+    strategy:
+      matrix:
+        node: [16]
+        os: ['ubuntu-latest']
+        assumeCommand:
+          # --dev + live (or non-dev + nonlive) causes an issuer URL mismatch
+          - 'slyo-org-01-readonly-nonlive'
+          - 'slyo-org-01-readonly-live --dev'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+      - run: yarn
+      - name: Assume (User Email PAT)
+        id: assume_user_email_pat
+        run: yarn start assume ${{ matrix.assumeCommand }} --provider aws-with-variables --headless --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} || echo "::set-output name=returnCode::$?"
+        shell: bash
+      - name: Assume (User Email PAT) Assertion (Success == Skipped)
+        if: ${{ steps.assume_user_email_pat.outputs.returnCode != '255' }}
+        run: |
+          echo "The return code was ${{ steps.assume_user_email_pat.outputs.returnCode }}"
+          exit 1
 
-  # assume-success-teams:
-  #   strategy:
-  #     matrix:
-  #       node: [16]
-  #       os: ['ubuntu-latest']
-  #       assumeCommand:
-  #         - 'arn:aws:iam::656716386475:role/readonly --provider aws-nonlive --dev'
-  #         - 'arn:aws:iam::656716386475:role/readonly --provider aws-live'
-  #   runs-on: ${{ matrix.os }}
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - uses: actions/setup-node@v3
-  #       with:
-  #         node-version: ${{ matrix.node }}
-  #         cache: 'yarn'
-  #     - run: yarn
-  #     - name: Assume as slyu-orgmember-01 via GitHub Teams
-  #       run: yarn start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_01_USER_EMAIL_GH_TOKEN }}
-  #     - name: Assume as slyu-orgmember-02 via User Definition
-  #       run: yarn start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_02_USER_EMAIL_GH_TOKEN }}
+  assume-success-teams:
+    strategy:
+      matrix:
+        node: [16]
+        os: ['ubuntu-latest']
+        assumeCommand:
+          - 'arn:aws:iam::656716386475:role/readonly --provider aws-nonlive --dev'
+          - 'arn:aws:iam::656716386475:role/readonly --provider aws-live'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+      - run: yarn
+      - name: Assume as slyu-orgmember-01 via GitHub Teams
+        run: yarn start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_01_USER_EMAIL_GH_TOKEN }}
+      - name: Assume as slyu-orgmember-02 via User Definition
+        run: yarn start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_02_USER_EMAIL_GH_TOKEN }}
 
-  # assume-fail-teams:
-  #   strategy:
-  #     matrix:
-  #       node: [16]
-  #       os: ['ubuntu-latest']
-  #       assumeCommand:
-  #         - 'arn:aws:iam::656716386475:role/readonly --provider aws-nonlive --dev'
-  #         - 'arn:aws:iam::656716386475:role/readonly --provider aws-live'
-  #   runs-on: ${{ matrix.os }}
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - uses: actions/setup-node@v3
-  #       with:
-  #         node-version: ${{ matrix.node }}
-  #         cache: 'yarn'
-  #     - run: yarn
-  #     - name: Assume as slyu-orgmember-03
-  #       id: assume_slyu_orgmember_03
-  #       run: yarn start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_03_USER_EMAIL_GH_TOKEN }} || echo "::set-output name=returnCode::$?"
-  #       shell: bash
-  #     - name: Assume (User Email PAT) Assertion (Success == Skipped)
-  #       if: ${{ steps.assume_slyu_orgmember_03.outputs.returnCode != '255' }}
-  #       run: |
-  #         echo "The return code was ${{ steps.assume_slyu_orgmember_03.outputs.returnCode }}"
-  #         exit 1
+  assume-fail-teams:
+    strategy:
+      matrix:
+        node: [16]
+        os: ['ubuntu-latest']
+        assumeCommand:
+          - 'arn:aws:iam::656716386475:role/readonly --provider aws-nonlive --dev'
+          - 'arn:aws:iam::656716386475:role/readonly --provider aws-live'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+      - run: yarn
+      - name: Assume as slyu-orgmember-03
+        id: assume_slyu_orgmember_03
+        run: yarn start assume ${{ matrix.assumeCommand }} --headless --withToken ${{ secrets.SLYU_ORGMEMBER_03_USER_EMAIL_GH_TOKEN }} || echo "::set-output name=returnCode::$?"
+        shell: bash
+      - name: Assume (User Email PAT) Assertion (Success == Skipped)
+        if: ${{ steps.assume_slyu_orgmember_03.outputs.returnCode != '255' }}
+        run: |
+          echo "The return code was ${{ steps.assume_slyu_orgmember_03.outputs.returnCode }}"
+          exit 1

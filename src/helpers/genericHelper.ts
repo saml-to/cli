@@ -431,16 +431,25 @@ ${githubLogins.map((l) => `- ${l}`)}`,
     ui.updateBottomBar('');
     switch (platform) {
       case 'win32': {
-        Object.entries(vars).forEach(([key, value], i, arr) => {
-          process.stdout.write('set ');
-          process.stdout.write(key);
-          process.stdout.write('=');
-          process.stdout.write(value);
-          if (i + 1 < arr.length) {
-            process.stdout.write(' & ');
-          }
-        });
-        break;
+        throw new Error(`
+This operation is not supported on Windows systems.
+
+We're looking for feedback on the proper way to implement this feature so it has *nix parity.
+
+In the meantime, the "--save" flag can be used to save temporary credentials to \`~/.aws\`.
+
+Please file an issue at https://github.com/saml-to/cli.
+        `);
+        // Object.entries(vars).forEach(([key, value], i, arr) => {
+        //   process.stdout.write('set ');
+        //   process.stdout.write(key);
+        //   process.stdout.write('=');
+        //   process.stdout.write(value);
+        //   if (i + 1 < arr.length) {
+        //     process.stdout.write(' & ');
+        //   }
+        // });
+        // break;
       }
       default: {
         process.stdout.write('export ');
