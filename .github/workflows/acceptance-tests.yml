@@ -23,7 +23,7 @@ jobs:
           - '--provider aws' # TODO Split tests for live/nonlive so this can be dropped
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
@@ -52,7 +52,7 @@ jobs:
           - '--provider aws' # TODO Split tests for live/nonlive so this can be dropped
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
@@ -81,7 +81,7 @@ jobs:
           - '--provider aws'
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
@@ -120,7 +120,7 @@ jobs:
           - 'slyo-org-01-readonly-live'
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
@@ -142,7 +142,7 @@ jobs:
           - 'arn:aws:iam::013527058470:role/slyo-org-01-readonly-live'
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
@@ -163,7 +163,7 @@ jobs:
           - 'slyo-org-01-readonly-live --dev'
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
@@ -189,7 +189,7 @@ jobs:
           - 'arn:aws:iam::656716386475:role/readonly --provider aws-live'
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
@@ -210,7 +210,7 @@ jobs:
           - 'arn:aws:iam::656716386475:role/readonly --provider aws-live'
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
