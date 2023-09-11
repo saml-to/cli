@@ -37,7 +37,7 @@ jobs:
         # TODO Figure out how to do subshells on windows
         run: |
           $(yarn --silent start assume ${{ matrix.role }} --headless ${{ matrix.flags }})
-          aws sts get-caller-identity --profile ${{ matrix.role }}"
+          aws sts get-caller-identity --profile ${{ matrix.role }}
 
   assume-success-save:
     strategy:
