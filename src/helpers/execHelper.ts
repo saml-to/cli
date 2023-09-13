@@ -15,7 +15,7 @@ export const exec = (argv: string[]): Promise<void> => {
       return;
     }
 
-    const p = proc.spawn(command, argv.slice(1), {
+    const p = proc.spawn(`"${command}"`, argv.slice(1), {
       shell: true,
       env,
     });

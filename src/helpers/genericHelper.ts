@@ -428,16 +428,22 @@ ${githubLogins.map((l) => `- ${l}`)}`,
   }
 
   outputEnv(vars: { [key: string]: string }, platform: NodeJS.Platform = process.platform): void {
-    ui.updateBottomBar('');
     switch (platform) {
       case 'win32': {
+        const { PATHEXT } = process.env;
+        // Diff'd Envs on Windows, found that .CPL is present in pwsh. /shrug
+        // If anyone reads this, I'm definitely looking for a more reliable way to detect pwsh or command prompt.
+        if (!PATHEXT || PATHEXT.indexOf('.CPL') === -1) {
+          throw new Error(`
+This operation is only supported on PowerShell.
+
+Replace the "--headles" flag with "--save [profileName]" to store temporary credentials to \`~/.aws\`.`);
+        }
+
         Object.entries(vars).forEach(([key, value], i, arr) => {
-          process.stdout.write('set ');
-          process.stdout.write(key);
-          process.stdout.write('=');
-          process.stdout.write(value);
+          process.stdout.write(`$Env:${key}="${value}";`);
           if (i + 1 < arr.length) {
-            process.stdout.write(' & ');
+            process.stdout.write(' ');
           }
         });
         break;

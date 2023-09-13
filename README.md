@@ -103,6 +103,28 @@ saml-to assume 123456789012 # match by the account ID
 
 Check out the documentation for [`assume`](https://docs.saml.to/usage/cli/assume).
 
+## Setting Environment Variables
+
+The `--headless` flag will output an expression to update your shell environment with a role.
+
+### `bash`, `zsh`, etc...
+
+Use a subshell (`$(...)`) to set `AWS_*` related environment variables:
+
+```bash
+$(saml-to assume some-role --headless)
+aws s3api list-buckets # or any desired `aws` command
+```
+
+### Powershell
+
+Use `Invoke-Expression` (`iex`) to set `AWS_*` related environment variables:
+
+```powershell
+iex (saml-to assume some-role --headless)
+aws s3api list-buckets # or any desired `aws` command
+```
+
 ## Initial Setup
 
 Visit [SAML.to Install](https://saml.to/install) to get started by connecting a GitHub User or Organization to an AWS Account.

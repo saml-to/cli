@@ -14,23 +14,17 @@ import { MessagesHelper } from './helpers/messagesHelper';
 import PromptUI from 'inquirer/lib/ui/prompt';
 import { version } from '../package.json';
 import { ApiHelper } from './helpers/apiHelper';
-import BottomBar from 'inquirer/lib/ui/bottom-bar';
 import { NOT_LOGGED_IN } from './messages';
 import { ErrorWithReturnCode, RETURN_CODE_NOT_LOGGED_IN } from './errors';
 import { headless as isHeadless, outputStream } from '../cli';
+import { BottomBar } from './ui';
 
 process.addListener('SIGINT', () => {
   console.log('Exiting!');
   process.exit(0);
 });
 
-export let ui: BottomBar;
-if (!isHeadless) {
-  ui = new BottomBar({ output: process.stderr });
-} else {
-  ui = {} as BottomBar;
-  ui.updateBottomBar = () => ui;
-}
+export const ui = new BottomBar(isHeadless);
 
 export const prompt = <T extends inquirer.Answers>(
   field: string,
