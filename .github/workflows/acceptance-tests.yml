@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         node: [14, 16, 18]
-        os: ['macos-latest', 'ubuntu-latest'] # TODO support windows-latest
+        os: ['macos-latest', 'ubuntu-latest']
         role:
           - readonly
           - arn:aws:iam::656716386475:role/readonly
@@ -34,9 +34,36 @@ jobs:
         run: yarn start login github --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} ${{ matrix.flags }}
       - name: Assume (User Email PAT)
         id: assume_user_email_pat
-        # TODO Figure out how to do subshells on windows
         run: |
           $(yarn --silent start assume ${{ matrix.role }} --headless ${{ matrix.flags }})
+          aws sts get-caller-identity
+
+  assume-success-headless-windows:
+    strategy:
+      matrix:
+        node: [14, 16, 18]
+        os: ['windows-latest']
+        role:
+          - readonly
+          - arn:aws:iam::656716386475:role/readonly
+        flags:
+          - '--dev --provider aws-nonlive'
+          - '--provider aws' # TODO Split tests for live/nonlive so this can be dropped
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+      - run: yarn
+      - name: Login
+        id: login
+        run: yarn start login github --withToken ${{ secrets.SLYU_STANDALONE_01_USER_EMAIL_GH_TOKEN }} ${{ matrix.flags }}
+      - name: Assume (User Email PAT)
+        id: assume_user_email_pat
+        run: |
+          iex (yarn --silent start assume ${{ matrix.role }} --headless ${{ matrix.flags }})
           aws sts get-caller-identity
 
   assume-success-save:
