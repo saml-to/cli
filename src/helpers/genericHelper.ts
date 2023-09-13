@@ -430,32 +430,28 @@ ${githubLogins.map((l) => `- ${l}`)}`,
   outputEnv(vars: { [key: string]: string }, platform: NodeJS.Platform = process.platform): void {
     switch (platform) {
       case 'win32': {
-        throw new Error(`
-This operation is not supported on Windows systems.
+        const { PATHEXT } = process.env;
+        // Diff'd Envs on Windows, found that .CPL is present in pwsh. /shrug
+        // If anyone reads this, I'm definitely looking for a more reliable way to detect pwsh or command prompt.
+        if (!PATHEXT || PATHEXT.indexOf('.CPL') === -1) {
+          throw new Error(`
+This operation is only supported on PowerShell.
 
-We're looking for feedback on the proper way to implement this feature so it has *nix parity.
+Replace the "--headles" flag with "--save [profileName]" to store temporary credentials to \`~/.aws\`.`);
+        }
 
-In the meantime, the "--save" flag can be used to save temporary credentials to \`~/.aws\`.
-
-Please file an issue at https://github.com/saml-to/cli.
-        `);
-        // Object.entries(vars).forEach(([key, value], i, arr) => {
-        //   process.stdout.write('set ');
-        //   process.stdout.write(key);
-        //   process.stdout.write('=');
-        //   process.stdout.write(value);
-        //   if (i + 1 < arr.length) {
-        //     process.stdout.write(' & ');
-        //   }
-        // });
-        // break;
+        Object.entries(vars).forEach(([key, value], i, arr) => {
+          process.stdout.write(`$Env:${key}="${value}";`);
+          if (i + 1 < arr.length) {
+            process.stdout.write(' ');
+          }
+        });
+        break;
       }
       default: {
         process.stdout.write('export ');
         Object.entries(vars).forEach(([key, value], i, arr) => {
-          process.stdout.write(key);
-          process.stdout.write('=');
-          process.stdout.write(value);
+          process.stdout.write(`${key}="${value}`);
           if (i + 1 < arr.length) {
             process.stdout.write(' ');
           }
