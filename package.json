@@ -1,6 +1,6 @@
 {
   "name": "saml-to",
-  "version": "2.1.2-1",
+  "version": "2.1.2",
   "description": "The CLI for saml.to",
   "repository": "git@github.com:saml-to/cli.git",
   "author": "Scaffoldly",
