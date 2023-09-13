@@ -451,7 +451,9 @@ Replace the "--headles" flag with "--save [profileName]" to store temporary cred
       default: {
         process.stdout.write('export ');
         Object.entries(vars).forEach(([key, value], i, arr) => {
-          process.stdout.write(`${key}="${value}"`);
+          process.stdout.write(key);
+          process.stdout.write('=');
+          process.stdout.write(value);
           if (i + 1 < arr.length) {
             process.stdout.write(' ');
           }
