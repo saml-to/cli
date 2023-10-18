@@ -24,7 +24,7 @@ process.addListener('SIGINT', () => {
   process.exit(0);
 });
 
-export const ui = new BottomBar(isHeadless);
+export const ui = new BottomBar(isHeadless, outputStream);
 
 export const prompt = <T extends inquirer.Answers>(
   field: string,
