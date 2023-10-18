@@ -9,11 +9,15 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   assume-success-headless:
     strategy:
       matrix:
-        node: [14, 16, 18]
+        node: [14, 16, 18, 20]
         os: ['macos-latest', 'ubuntu-latest']
         role:
           - readonly
@@ -41,7 +45,7 @@ jobs:
   assume-success-headless-windows:
     strategy:
       matrix:
-        node: [14, 16, 18]
+        node: [14, 16, 18, 20]
         os: ['windows-latest']
         role:
           - readonly
@@ -69,7 +73,7 @@ jobs:
   assume-success-save:
     strategy:
       matrix:
-        node: [14, 16, 18]
+        node: [14, 16, 18, 20]
         os: ['macos-latest', 'ubuntu-latest', 'windows-latest']
         role:
           - readonly
