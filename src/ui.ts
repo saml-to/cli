@@ -1,11 +1,7 @@
 import inquirer from 'inquirer';
 
 export class BottomBar {
-  private headless: boolean;
-
-  constructor(headless: boolean) {
-    this.headless = headless;
-  }
+  constructor(private headless: boolean, private stream: NodeJS.WriteStream) {}
 
   public updateBottomBar(text: string) {
     if (!this.headless) {
@@ -15,7 +11,7 @@ export class BottomBar {
         process.stderr.write(`${text}\n`);
         return;
       }
-      new inquirer.ui.BottomBar().updateBottomBar(text);
+      new inquirer.ui.BottomBar({ output: this.stream }).updateBottomBar(text);
     }
   }
 }
