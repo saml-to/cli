@@ -4,7 +4,7 @@
 import { ErrorWithReturnCode } from '../src/errors';
 import { Command } from '../src/command';
 import { Console } from 'console';
-import { isHeadless } from 'src/ui';
+import { isHeadless } from '../src/ui';
 
 // Disables (node:64080) ExperimentalWarning: The Fetch API is an experimental feature. This feature could change at any time
 process.emitWarning = () => {};
