@@ -4,12 +4,12 @@
 import { ErrorWithReturnCode } from '../src/errors';
 import { Command } from '../src/command';
 import { Console } from 'console';
+import { isHeadless } from 'src/ui';
 
 // Disables (node:64080) ExperimentalWarning: The Fetch API is an experimental feature. This feature could change at any time
 process.emitWarning = () => {};
 
-export const headless = !!process.argv.find((arg) => arg === '--headless');
-export const outputStream = headless ? process.stderr : process.stdout;
+export const outputStream = isHeadless() ? process.stderr : process.stdout;
 export const customConsole = new Console(outputStream, process.stderr);
 
 console.log = customConsole.log;

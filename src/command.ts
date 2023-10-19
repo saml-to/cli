@@ -16,7 +16,7 @@ import { version } from '../package.json';
 import { ApiHelper } from './helpers/apiHelper';
 import { NOT_LOGGED_IN } from './messages';
 import { ErrorWithReturnCode, RETURN_CODE_NOT_LOGGED_IN } from './errors';
-import { headless as isHeadless, outputStream } from '../cli';
+import { outputStream } from '../cli';
 import { BottomBar } from './ui';
 
 process.addListener('SIGINT', () => {
@@ -24,7 +24,7 @@ process.addListener('SIGINT', () => {
   process.exit(0);
 });
 
-export const ui = new BottomBar(isHeadless, outputStream);
+export const ui = new BottomBar(outputStream);
 
 export const prompt = <T extends inquirer.Answers>(
   field: string,

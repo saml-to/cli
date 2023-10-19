@@ -1,7 +1,14 @@
 import inquirer from 'inquirer';
 
+export const isHeadless = (): boolean => {
+  return !!process.argv.find((arg) => arg === '--headless');
+};
+
 export class BottomBar {
-  constructor(private headless: boolean, private stream: NodeJS.WriteStream) {}
+  headless = false;
+  constructor(private stream: NodeJS.WriteStream) {
+    this.headless = isHeadless();
+  }
 
   public updateBottomBar(text: string) {
     if (!this.headless) {
