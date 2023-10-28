@@ -200,11 +200,10 @@ export class Command {
           } else {
             ui.updateBottomBar('');
             console.error(
-              `API Error: ${
-                (error.response &&
-                  error.response.data &&
-                  (error.response.data as { message: string }).message) ||
-                error.message
+              `API Error: ${(error.response &&
+                error.response.data &&
+                (error.response.data as { message: string }).message) ||
+              error.message
               }`,
             );
           }
