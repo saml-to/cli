@@ -70,6 +70,43 @@ export class Command {
     const ya = yargs
       .scriptName(this.messagesHelper.processName)
       .command({
+        command: 'identity',
+        describe: `Show the current user identity`,
+        handler: ({ org, withToken, output }) =>
+          this.loginWrapper('user:email', () =>
+            this.show.handle(
+              'identity' as ShowSubcommands,
+              org as string | undefined,
+              undefined,
+              false,
+              undefined,
+              false,
+              withToken as string | undefined,
+              output as string | undefined,
+            ),
+          ),
+        builder: {
+          org: {
+            demand: false,
+            type: 'string',
+            description: 'Specify an organization',
+          },
+          withToken: {
+            demand: false,
+            type: 'string',
+            description: 'Use the provided token (defaults to using the token in ~/.saml-to/)',
+          },
+          output: {
+            alias: 'o',
+            demand: false,
+            type: 'string',
+            description: 'Output format',
+            choices: ['table', 'json'],
+            default: 'table',
+          },
+        },
+      })
+      .command({
         command: 'list-roles',
         describe: `Show roles that are available to assume`,
         handler: ({ org, provider, refresh, withToken }) =>

@@ -1,6 +1,4 @@
 
-#docker build . -t boostchicken/saml-to:latest --push
-
 FROM node:20-slim AS base
 COPY . /app
 WORKDIR /app

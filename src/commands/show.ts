@@ -2,6 +2,7 @@ import { NO_ORG } from '../messages';
 import {
   GithubSlsRestApiRoleResponse,
   GithubSlsRestApiLoginResponse,
+  GithubSlsRestApiIdentityResponse,
 } from '../../api/github-sls-rest-api';
 import { CONFIG_DIR, Scms } from '../stores/scms';
 import fs from 'fs';
@@ -21,7 +22,8 @@ export type ShowSubcommands =
   | 'roles'
   | 'logins'
   | 'orgs'
-  | 'config';
+  | 'config'
+  | 'identity';
 
 export class ShowCommand {
   scms: Scms;
@@ -46,6 +48,7 @@ export class ShowCommand {
     refresh?: boolean,
     raw?: boolean,
     withToken?: string,
+    output?: string,
   ): Promise<void> {
     switch (subcommand) {
       case 'orgs': {
@@ -59,6 +62,10 @@ export class ShowCommand {
       case 'logins': {
         event(this.scms, 'show', subcommand, org);
         return this.showLogins(org, refresh, save);
+      }
+      case 'identity': {
+        event(this.scms, 'show', subcommand, org);
+        return this.showIdentity(org, withToken, output);
       }
       default:
         break;
@@ -238,6 +245,16 @@ export class ShowCommand {
     return logins.results;
   }
 
+  public async fetchIdentity(
+    org?: string,
+    withToken?: string,
+  ): Promise<GithubSlsRestApiIdentityResponse> {
+    const accessToken = withToken || this.scms.getGithubToken();
+    const idpApi = this.apiHelper.idpApi(accessToken);
+    const { data: identity } = await idpApi.getIdentity(org);
+    return identity;
+  }
+
   private async showLogins(org?: string, refresh?: boolean, save?: boolean): Promise<void> {
     const logins = await this.fetchLogins(org, refresh);
 
@@ -252,6 +269,16 @@ export class ShowCommand {
       fs.writeFileSync(location, JSON.stringify({ logins }));
       ui.updateBottomBar('');
       console.log(`Logins saved to ${location}`);
+    }
+  }
+
+  private async showIdentity(org?: string, withToken?: string, output?: string): Promise<void> {
+    const identity = await this.fetchIdentity(org, withToken);
+
+    if (output === 'json') {
+      console.log(JSON.stringify(identity, null, 2));
+    } else {
+      console.table([identity]);
     }
   }
 
