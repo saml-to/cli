@@ -31,7 +31,7 @@ export const prompt = <T extends inquirer.Answers>(
   questions: QuestionCollection<T>,
   initialAnswers?: Partial<T>,
   stream?: NodeJS.WriteStream,
-): Promise<T> & { ui: PromptUI } => {
+): Promise<T> & { ui: PromptUI<T> } => {
   if (!process.stdin.isTTY) {
     throw new Error(`TTY was disabled while attempting to collect \`${field}\`.`);
   }
@@ -237,11 +237,10 @@ export class Command {
           } else {
             ui.updateBottomBar('');
             console.error(
-              `API Error: ${
-                (error.response &&
-                  error.response.data &&
-                  (error.response.data as { message: string }).message) ||
-                error.message
+              `API Error: ${(error.response &&
+                error.response.data &&
+                (error.response.data as { message: string }).message) ||
+              error.message
               }`,
             );
           }
