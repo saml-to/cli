@@ -27,7 +27,7 @@ Options:
 
 Please make sure the following is installed:
 
-- NodeJS v14+
+- NodeJS v16+
 - `npm` or `yarn` or `npx` avaliable on the `$PATH`
 - (MacOS Alternative) Homebrew available on the `$PATH`
 
