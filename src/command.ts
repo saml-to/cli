@@ -1,5 +1,4 @@
 import { hideBin } from 'yargs/helpers';
-import yargs from 'yargs';
 import axios from 'axios';
 import { AssumeCommand } from './commands/assume';
 // import { InitCommand } from './commands/init';
@@ -16,14 +15,14 @@ import { version } from '../package.json';
 import { ApiHelper } from './helpers/apiHelper';
 import { NOT_LOGGED_IN } from './messages';
 import { ErrorWithReturnCode, RETURN_CODE_NOT_LOGGED_IN } from './errors';
-import { outputStream } from '../cli';
-import { BottomBar } from './ui';
+import { BottomBar, isHeadless } from './ui';
 
 process.addListener('SIGINT', () => {
   console.log('Exiting!');
   process.exit(0);
 });
 
+const outputStream = isHeadless() ? process.stderr : process.stdout;
 export const ui = new BottomBar(outputStream);
 
 export const prompt = <T extends inquirer.Answers>(
@@ -67,7 +66,8 @@ export class Command {
   }
 
   public async run(argv: string[]): Promise<void> {
-    const ya = yargs
+    const yargs = (await import('yargs')).default;
+    const ya = yargs()
       .scriptName(this.messagesHelper.processName)
       .command({
         command: 'identity',

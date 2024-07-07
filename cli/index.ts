@@ -1,26 +1,23 @@
 #!/usr/bin/env node
 
-// Disables (node:64080) ExperimentalWarning: The Fetch API is an experimental feature. This feature could change at any time
-process.emitWarning = () => {};
-
-// import { Console } from 'console';
-import { ErrorWithReturnCode } from '../src/errors';
-import { Command } from '../src/command';
-import { Console } from 'console';
-import { isHeadless } from '../src/ui';
-
-export const outputStream = isHeadless() ? process.stderr : process.stdout;
-export const customConsole = new Console(outputStream, process.stderr);
-
-console.log = customConsole.log;
-console.info = customConsole.info;
-console.warn = customConsole.warn;
-console.error = customConsole.error;
-console.debug = customConsole.debug;
-console.clear = customConsole.clear;
-console.trace = customConsole.trace;
-
 (async () => {
+  process.emitWarning = () => {};
+
+  const { ErrorWithReturnCode } = await import('../src/errors');
+  const { Command } = await import('../src/command');
+  const { Console } = await import('console');
+  const { isHeadless } = await import('../src/ui');
+
+  const customConsole = new Console(isHeadless() ? process.stderr : process.stdout, process.stderr);
+
+  console.log = customConsole.log;
+  console.info = customConsole.info;
+  console.warn = customConsole.warn;
+  console.error = customConsole.error;
+  console.debug = customConsole.debug;
+  console.clear = customConsole.clear;
+  console.trace = customConsole.trace;
+
   const command = new Command(process.argv);
   try {
     await command.run(process.argv);
