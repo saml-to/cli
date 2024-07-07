@@ -8,5 +8,5 @@
 - serviceName: auth-sls-rest-api
   version: 1.0.23-0
 - serviceName: github-sls-rest-api
-  version: 1.0.98-0
+  version: 1.0.104-27
 
