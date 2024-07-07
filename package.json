@@ -75,7 +75,7 @@
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-jsx-a11y": "^6.4.1",
     "eslint-plugin-prettier": "^4.0.0",
-    "husky": "^9.0.11",
+    "husky": "8",
     "inquirer": "^8.2.0",
     "js-yaml": "^4.1.0",
     "loglevel": "^1.8.0",

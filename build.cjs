@@ -7,7 +7,9 @@ const { execSync } = require('child_process');
 if (fs.existsSync(path.join(__dirname, '.git'))) {
   try {
     console.log("Activating Husky's Git hooks...");
-    execSync(path.join(__dirname, 'node_modules', '.bin', 'husky'), { stdio: 'inherit' });
+    execSync(path.join(__dirname, 'node_modules', '.bin', 'husky'), ['install', '.husky'], {
+      stdio: 'inherit',
+    });
   } catch (e) {
     console.warn('Failed to activate Husky Git hooks:', e.message);
   }
