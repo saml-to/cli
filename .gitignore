@@ -3,4 +3,4 @@ externals
 
 /build/**/*
 /dist/**/*.map
-!/dist/main.js.map
+!/dist/index.js.map

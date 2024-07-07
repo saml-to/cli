@@ -225,6 +225,7 @@ ${githubLogins.map((l) => `- ${l}`)}`,
 
     this.genericHelper.outputEnv({
       AWS_DEFAULT_REGION: region,
+      AWS_REGION: region,
       AWS_ACCESS_KEY_ID: response.Credentials.AccessKeyId,
       AWS_SECRET_ACCESS_KEY: response.Credentials.SecretAccessKey,
       AWS_SESSION_TOKEN: response.Credentials.SessionToken,

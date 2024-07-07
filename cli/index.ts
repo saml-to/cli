@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
+// Disables (node:64080) ExperimentalWarning: The Fetch API is an experimental feature. This feature could change at any time
+process.emitWarning = () => {};
+
 // import { Console } from 'console';
 import { ErrorWithReturnCode } from '../src/errors';
 import { Command } from '../src/command';
 import { Console } from 'console';
 import { isHeadless } from '../src/ui';
-
-// Disables (node:64080) ExperimentalWarning: The Fetch API is an experimental feature. This feature could change at any time
-process.emitWarning = () => {};
 
 export const outputStream = isHeadless() ? process.stderr : process.stdout;
 export const customConsole = new Console(outputStream, process.stderr);
