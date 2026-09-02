@@ -19,6 +19,8 @@ import { event } from '../helpers/events';
 import { openBrowser } from '../helpers/browserHelper';
 import { ApiHelper } from '../helpers/apiHelper';
 import { RetryFunctionWithCode, TotpHelper } from '../helpers/totpHelper';
+import { R2Helper } from '../helpers/r2/r2Helper';
+import { isR2Issuer } from '../helpers/r2/env';
 
 export class AssumeCommand {
   scms: Scms;
@@ -27,12 +29,15 @@ export class AssumeCommand {
 
   awsHelper: AwsHelper;
 
+  r2Helper: R2Helper;
+
   totpHelper: TotpHelper;
 
   constructor(private apiHelper: ApiHelper, private messagesHelper: MessagesHelper) {
     this.scms = new Scms();
     this.show = new ShowCommand(apiHelper);
     this.awsHelper = new AwsHelper(apiHelper, messagesHelper);
+    this.r2Helper = new R2Helper(this.awsHelper.genericHelper);
     this.totpHelper = new TotpHelper(apiHelper);
   }
 
@@ -64,6 +69,16 @@ export class AssumeCommand {
 
     if (save !== undefined && !save) {
       save = role;
+    }
+
+    if (!headless && !save) {
+      // Cloudflare R2 roles have no web console to open: save a profile named after the bucket
+      const r2Role = await this.findR2Role(role, org, provider);
+      if (r2Role) {
+        save = r2Role.role;
+        org = r2Role.org;
+        provider = r2Role.provider;
+      }
     }
 
     try {
@@ -148,11 +163,33 @@ export class AssumeCommand {
       return this.totpHelper.promptChallenge(challenge, token, retryFn);
     }
 
+    if (samlResponse.cloudflareR2) {
+      return this.r2Helper.assumeR2(samlResponse.cloudflareR2, save, headless);
+    }
+
     if (samlResponse.recipient.endsWith('.amazon.com/saml')) {
       return this.awsHelper.assumeAws(samlResponse, save, headless);
     }
 
     throw new Error(TERMINAL_NOT_SUPPORTED(samlResponse.provider, samlResponse.recipient));
+  }
+
+  /**
+   * Look the role up in the user's available roles and return it when it belongs to a
+   * Cloudflare R2 provider (its issuer is the R2 endpoint), otherwise undefined.
+   */
+  private async findR2Role(
+    role: string,
+    org?: string,
+    provider?: string,
+  ): Promise<GithubSlsRestApiRoleResponse | undefined> {
+    const roles = await this.show.fetchRoles(org, provider);
+    const matches = roles.filter((r) => r.role.toLowerCase() === role.toLowerCase());
+    if (matches.length !== 1) {
+      return undefined;
+    }
+    const [match] = matches;
+    return isR2Issuer(match.issuer) ? match : undefined;
   }
 
   async promptRole(org?: string, provider?: string): Promise<GithubSlsRestApiRoleResponse> {
