@@ -103,6 +103,21 @@ saml-to assume 123456789012 # match by the account ID
 
 Check out the documentation for [`assume`](https://docs.saml.to/usage/cli/assume).
 
+### Assuming Cloudflare R2 Buckets
+
+Roles under a `type: cloudflare-r2` provider in `saml-to.yml` are R2 buckets. Assuming one
+returns short-lived, bucket-scoped S3 credentials instead of a SAML Response:
+
+```bash
+$(saml-to assume uploads --provider r2 --headless) && aws s3 sync . s3://uploads/
+```
+
+`--headless` exports `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, plus
+`AWS_ENDPOINT_URL` (your account's R2 endpoint), `AWS_REGION=auto` and the checksum settings
+R2 expects, so the AWS CLI and SDKs work without flags. `--save <profile>` writes the same into
+`~/.aws`. Without either flag, an R2 role saves a profile named after the bucket (there is no
+console to open).
+
 ## Setting Environment Variables
 
 The `--headless` flag will output an expression to update your shell environment with a role.
